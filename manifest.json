@@ -2,9 +2,9 @@
     "name": "Ministering Contacts",
     "short_name": "Ministering",
     "description": "Manage ministering contacts and share things with them.",
-    "id": "/",
-    "start_url": "/index.html",
-    "scope": "/",
+    "id": ".",
+    "start_url": ".",
+    "scope": ".",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4CAF50",
@@ -27,7 +27,7 @@
         "productivity"
     ],
     "share_target": {
-        "action": "/share",
+        "action": "share",
         "method": "POST",
         "enctype": "multipart/form-data",
         "params": {
