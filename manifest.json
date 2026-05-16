@@ -1,7 +1,7 @@
 {
     "name": "Ministering Contacts",
     "short_name": "Ministering",
-    "description": "Manage and share contacts with ministering companions",
+    "description": "Manage ministering contacts and share things with them.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
