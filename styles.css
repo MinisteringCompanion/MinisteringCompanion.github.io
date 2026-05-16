@@ -280,6 +280,20 @@ main {
     padding: 16px;
 }
 
+.share-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.share-action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .contact-card.share-option {
     cursor: pointer;
 }

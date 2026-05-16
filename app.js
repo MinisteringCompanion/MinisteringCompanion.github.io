@@ -287,30 +287,8 @@ class UIManager {
 
         contacts.forEach(contact => {
             const card = this.createContactCard(contact, true);
-            card.classList.add('share-option');
-            card.addEventListener('click', () => this.handleShare(contact));
             this.shareContactsList.appendChild(card);
         });
-    }
-
-    handleShare(contact) {
-        const sharedText = this.sharedData.text || this.sharedData.url || '';
-        const isEmail = this.sharedData.type === 'email' || !this.sharedData.type;
-
-        // Offer both options
-        const choice = confirm(`Share via:\n\nOK = Email\nCancel = Text Message`);
-
-        if (choice && contact.email) {
-            // Email
-            window.location.href = `mailto:${contact.email}?subject=Check this out&body=${encodeURIComponent(sharedText)}`;
-        } else if (!choice && contact.phone) {
-            // SMS
-            window.location.href = `sms:${contact.phone}?body=${encodeURIComponent(sharedText)}`;
-        } else {
-            alert('Contact does not have the required information for this share type.');
-        }
-
-        this.showContactsView();
     }
 
     render() {
@@ -366,6 +344,30 @@ class UIManager {
 
             card.querySelector('.edit-btn').addEventListener('click', () => this.showFormView(contact.id));
             card.querySelector('.delete-btn').addEventListener('click', () => this.showDeleteConfirm(contact.id, contact.name));
+        } else {
+            const sharedText = this.sharedData?.text || this.sharedData?.url || '';
+            const shareActions = document.createElement('div');
+            shareActions.className = 'share-actions';
+
+            if (contact.phone) {
+                const smsLink = document.createElement('a');
+                smsLink.className = 'btn btn-primary share-action-link';
+                smsLink.href = `sms:${contact.phone}?body=${encodeURIComponent(sharedText)}`;
+                smsLink.textContent = 'Text';
+                shareActions.appendChild(smsLink);
+            }
+
+            if (contact.email) {
+                const emailLink = document.createElement('a');
+                emailLink.className = 'btn btn-secondary share-action-link';
+                emailLink.href = `mailto:${contact.email}?subject=Check this out&body=${encodeURIComponent(sharedText)}`;
+                emailLink.textContent = 'Email';
+                shareActions.appendChild(emailLink);
+            }
+
+            if (shareActions.childElementCount > 0) {
+                card.appendChild(shareActions);
+            }
         }
 
         return card;
