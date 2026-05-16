@@ -172,7 +172,7 @@ class UIManager {
     }
 
     attachEventListeners() {
-        this.addContactBtn.addEventListener('click', () => this.showFormView());
+        this.addContactBtn.addEventListener('click', () => this.handleAddContact());
         this.importBtn.addEventListener('click', () => this.importFile.click());
         this.cancelBtn.addEventListener('click', () => this.showContactsView());
         this.contactForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -213,6 +213,40 @@ class UIManager {
         this.shareView.classList.add('hidden');
         this.formView.classList.remove('hidden');
         this.nameInput.focus();
+    }
+
+    async handleAddContact() {
+        if (navigator.contacts && typeof navigator.contacts.select === 'function') {
+            try {
+                const selectedContacts = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
+
+                if (selectedContacts && selectedContacts.length > 0) {
+                    const addedCount = selectedContacts.reduce((count, selectedContact) => {
+                        const names = selectedContact.name || [];
+                        const phones = selectedContact.tel || [];
+                        const emails = selectedContact.email || [];
+                        const contact = {
+                            name: names[0] || 'Unnamed Contact',
+                            phone: phones[0] || '',
+                            email: emails[0] || '',
+                            birthday: ''
+                        };
+
+                        this.contactManager.addContact(contact);
+                        return count + 1;
+                    }, 0);
+
+                    if (addedCount > 0) {
+                        this.render();
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('Contacts picker unavailable or cancelled:', error);
+            }
+        }
+
+        this.showFormView();
     }
 
     showShareView(sharedData) {
