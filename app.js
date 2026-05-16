@@ -147,6 +147,7 @@ class UIManager {
         // Buttons
         this.addContactBtn = document.getElementById('addContactBtn');
         this.importBtn = document.getElementById('importBtn');
+        this.contactsPickerNote = document.getElementById('contactsPickerNote');
         this.cancelBtn = document.getElementById('cancelBtn');
         this.importFile = document.getElementById('importFile');
 
@@ -181,8 +182,25 @@ class UIManager {
         this.confirmNo.addEventListener('click', () => this.closeModal());
         this.modalOverlay.addEventListener('click', () => this.closeModal());
 
+        this.updateContactsPickerNote();
+
         // Check for shared data
         this.checkForSharedData();
+    }
+
+    updateContactsPickerNote() {
+        if (!this.contactsPickerNote) {
+            return;
+        }
+
+        if (navigator.contacts && typeof navigator.contacts.select === 'function') {
+            this.contactsPickerNote.classList.add('hidden');
+            this.contactsPickerNote.textContent = '';
+            return;
+        }
+
+        this.contactsPickerNote.textContent = 'This browser does not support the contact picker, so Add Contact opens the manual form instead.';
+        this.contactsPickerNote.classList.remove('hidden');
     }
 
     showContactsView() {
