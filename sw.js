@@ -1,10 +1,12 @@
-const CACHE_NAME = 'ministering-v1';
+const CACHE_NAME = 'ministering-v3';
 const urlsToCache = [
     '/',
     '/index.html',
     '/app.js',
     '/styles.css',
-    '/manifest.json'
+    '/manifest.json',
+    '/icon-192.png',
+    '/icon-512.png'
 ];
 
 // Install Event

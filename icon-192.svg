@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Ministering Contacts icon">
+  <rect width="192" height="192" rx="40" fill="#4CAF50"/>
+  <circle cx="96" cy="92" r="42" fill="#ffffff" opacity="0.16"/>
+  <path d="M96 42c-18 0-32 14-32 32 0 23 32 50 32 50s32-27 32-50c0-18-14-32-32-32zm0 44a12 12 0 1 1 0-24 12 12 0 0 1 0 24z" fill="#ffffff"/>
+</svg>
