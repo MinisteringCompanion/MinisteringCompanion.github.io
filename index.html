@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Manage and share contacts with ministering companions">
+    <title>Ministering Contacts</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234CAF50' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central' font-family='Arial, sans-serif' font-weight='bold'>M</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234CAF50' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central' font-family='Arial, sans-serif' font-weight='bold'>M</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ministering Contacts</h1>
+            <div class="header-actions">
+                <button id="addContactBtn" class="btn btn-primary">+ Add Contact</button>
+                <button id="importBtn" class="btn btn-secondary">📁 Import</button>
+            </div>
+        </header>
+
+        <!-- Contact List View -->
+        <main id="contactsView" class="view">
+            <div id="contactsList" class="contacts-list">
+                <!-- Contacts will be dynamically inserted here -->
+            </div>
+            <div id="emptyState" class="empty-state">
+                <p>No contacts yet. Add or import contacts to get started.</p>
+            </div>
+        </main>
+
+        <!-- Form View -->
+        <div id="formView" class="view hidden">
+            <div class="form-container">
+                <h2 id="formTitle">Add Contact</h2>
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="Contact name">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
+                    </div>
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" id="birthday" name="birthday">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="email@example.com">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Share View -->
+        <div id="shareView" class="view hidden">
+            <div class="share-container">
+                <h2>Share with</h2>
+                <p id="sharedContent" class="shared-content"></p>
+                <div id="shareContactsList" class="contacts-list">
+                    <!-- Contacts will be dynamically inserted here for selection -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="importFile" accept=".csv,.vcf" style="display: none;">
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmDialog" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-actions">
+                <button id="confirmYes" class="btn btn-danger">Delete</button>
+                <button id="confirmNo" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
