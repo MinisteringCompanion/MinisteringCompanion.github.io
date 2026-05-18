@@ -38,6 +38,7 @@ class SecurityManager {
         this.PIN_SALT_KEY = 'ministering_app_pin_salt';
         this.PIN_ITERATIONS_KEY = 'ministering_app_pin_iterations';
         this.BIOMETRIC_CREDENTIAL_KEY = 'ministering_app_biometric_credential';
+        this.BIOMETRIC_ENABLED_KEY = 'ministering_app_biometric_enabled';
         this.SESSION_KEY = 'ministering_app_unlocked';
         this.DEFAULT_ITERATIONS = 150000;
     }
@@ -64,6 +65,19 @@ class SecurityManager {
 
     hasBiometricCredential() {
         return Boolean(localStorage.getItem(this.BIOMETRIC_CREDENTIAL_KEY));
+    }
+
+    isBiometricEnabled() {
+        return localStorage.getItem(this.BIOMETRIC_ENABLED_KEY) === 'true';
+    }
+
+    setBiometricEnabled(enabled) {
+        if (enabled) {
+            localStorage.setItem(this.BIOMETRIC_ENABLED_KEY, 'true');
+        } else {
+            localStorage.removeItem(this.BIOMETRIC_ENABLED_KEY);
+            this.clearBiometricCredential();
+        }
     }
 
     async deriveHash(pin, saltBytes, iterations) {
@@ -138,11 +152,12 @@ class SecurityManager {
         }
 
         localStorage.setItem(this.BIOMETRIC_CREDENTIAL_KEY, bytesToBase64Url(new Uint8Array(credential.rawId)));
+        this.setBiometricEnabled(true);
         return true;
     }
 
     async unlockWithBiometric() {
-        if (!this.canUseBiometrics() || !this.hasBiometricCredential()) {
+        if (!this.canUseBiometrics() || !this.isBiometricEnabled() || !this.hasBiometricCredential()) {
             return false;
         }
 
@@ -352,7 +367,6 @@ class UIManager {
         this.securityHint = document.getElementById('securityHint');
         this.securityCancel = document.getElementById('securityCancel');
         this.securityBiometricBtn = document.getElementById('securityBiometricBtn');
-        this.securitySaveSettings = document.getElementById('securitySaveSettings');
         this.securitySubmit = document.getElementById('securitySubmit');
     }
 
@@ -368,7 +382,7 @@ class UIManager {
         this.securityForm.addEventListener('submit', (e) => this.handleSecuritySubmit(e));
         this.securityCancel.addEventListener('click', () => this.closeSecurityDialog());
         this.securityBiometricBtn.addEventListener('click', () => this.handleBiometricAction());
-        this.securitySaveSettings.addEventListener('click', () => this.handleSecuritySettingsSave());
+        this.securityBiometricOptIn.addEventListener('change', () => this.handleBiometricToggleChange());
         this.modalOverlay.addEventListener('click', () => this.handleOverlayClick());
 
         // Check for shared data
@@ -490,7 +504,8 @@ class UIManager {
 
     configureSecurityDialog(mode) {
         const biometricAvailable = this.securityManager.canUseBiometrics();
-        const biometricEnrolled = this.securityManager.hasBiometricCredential();
+        const biometricEnabled = this.securityManager.isBiometricEnabled();
+        const biometricEnrolled = biometricEnabled && this.securityManager.hasBiometricCredential();
 
         if (mode === 'setup') {
             this.securityTitle.textContent = 'Set App PIN';
@@ -499,8 +514,8 @@ class UIManager {
             this.securityBiometricOptIn.parentElement.classList.remove('hidden');
             this.securityCancel.classList.add('hidden');
             this.securityBiometricBtn.classList.add('hidden');
-            this.securitySaveSettings.classList.add('hidden');
             this.securityBiometricOptIn.disabled = !biometricAvailable;
+            this.securityBiometricOptIn.checked = biometricEnabled;
             this.securitySubmit.textContent = 'Save PIN';
             this.setSecurityHint(biometricAvailable
                 ? 'Biometrics can be enabled while you save the PIN.'
@@ -515,10 +530,9 @@ class UIManager {
             this.securityBiometricOptIn.parentElement.classList.remove('hidden');
             this.securityCancel.classList.remove('hidden');
             this.securityBiometricBtn.classList.toggle('hidden', !biometricAvailable);
-            this.securitySaveSettings.classList.remove('hidden');
             this.securityBiometricBtn.textContent = biometricEnrolled ? 'Re-enroll biometrics' : 'Set up biometrics';
             this.securitySubmit.textContent = 'Update PIN';
-            this.securityBiometricOptIn.checked = biometricEnrolled;
+            this.securityBiometricOptIn.checked = biometricEnabled;
             this.securityBiometricOptIn.disabled = !biometricAvailable;
             this.setSecurityHint(biometricAvailable
                 ? 'Leave biometric enabled to keep using face or fingerprint unlock.'
@@ -532,7 +546,6 @@ class UIManager {
         this.securityBiometricOptIn.parentElement.classList.add('hidden');
         this.securityCancel.classList.add('hidden');
         this.securityBiometricBtn.classList.toggle('hidden', !(biometricAvailable && biometricEnrolled));
-        this.securitySaveSettings.classList.add('hidden');
         this.securityBiometricBtn.textContent = 'Unlock with biometrics';
         this.securitySubmit.textContent = 'Unlock';
         this.setSecurityHint(biometricAvailable && biometricEnrolled
@@ -540,22 +553,24 @@ class UIManager {
             : 'Use your PIN to unlock the app.');
     }
 
-    async handleSecuritySettingsSave() {
+    async handleBiometricToggleChange() {
         if (this.securityMode !== 'manage') {
             return;
         }
 
+        const biometricAvailable = this.securityManager.canUseBiometrics();
         const shouldEnableBiometric = this.securityBiometricOptIn.checked;
+
+        if (!biometricAvailable) {
+            this.securityBiometricOptIn.checked = false;
+            this.setSecurityHint('Biometric setup is not available on this device.', true);
+            return;
+        }
+
         try {
             if (!shouldEnableBiometric) {
-                this.securityManager.clearBiometricCredential();
-                this.setSecurityHint('Security settings saved. Biometric unlock is disabled.');
-                this.closeSecurityDialog();
-                return;
-            }
-
-            if (!this.securityManager.canUseBiometrics()) {
-                this.setSecurityHint('Biometric setup is not available on this device.', true);
+                this.securityManager.setBiometricEnabled(false);
+                this.setSecurityHint('Biometric unlock is disabled.');
                 return;
             }
 
@@ -563,14 +578,16 @@ class UIManager {
                 await this.securityManager.enrollBiometric();
             }
 
-            this.setSecurityHint('Security settings saved. Biometric unlock is enabled.');
-            this.closeSecurityDialog();
+            this.securityManager.setBiometricEnabled(true);
+            this.setSecurityHint('Biometric unlock is enabled.');
         } catch (error) {
-            console.error('Failed to save security settings:', error);
+            console.error('Failed to update biometric setting:', error);
+            this.securityBiometricOptIn.checked = false;
+            this.securityManager.setBiometricEnabled(false);
             if (this.isBiometricCancelError(error)) {
-                this.setSecurityHint('Biometric setup was canceled. Settings were not changed.', true);
+                this.setSecurityHint('Biometric setup was canceled.', true);
             } else {
-                this.setSecurityHint(error.message || 'Unable to save settings right now.', true);
+                this.setSecurityHint(error.message || 'Unable to update biometric setting.', true);
             }
         }
     }
@@ -629,13 +646,16 @@ class UIManager {
             if (shouldEnableBiometric && this.securityManager.canUseBiometrics()) {
                 try {
                     await this.securityManager.enrollBiometric();
+                    this.securityManager.setBiometricEnabled(true);
                     this.setSecurityHint('PIN saved and biometric unlock is enabled.');
                 } catch (biometricError) {
                     console.error('Biometric enrollment failed:', biometricError);
+                    this.securityManager.setBiometricEnabled(false);
+                    this.securityBiometricOptIn.checked = false;
                     this.setSecurityHint('PIN saved. Biometric setup was not completed.', true);
                 }
             } else {
-                this.securityManager.clearBiometricCredential();
+                this.securityManager.setBiometricEnabled(false);
             }
             this.finishUnlock();
         } catch (error) {
@@ -659,6 +679,7 @@ class UIManager {
 
             await this.securityManager.enrollBiometric();
             this.securityBiometricOptIn.checked = true;
+            this.securityManager.setBiometricEnabled(true);
             this.securityBiometricOptIn.disabled = false;
             this.setSecurityHint('Biometric unlock is now enabled for this device.');
         } catch (error) {
