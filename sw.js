@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ministering-v5';
+const CACHE_NAME = 'ministering-v6';
 const urlsToCache = [
     './',
     './index.html',
+    './share.html',
     './app.js',
     './styles.css',
     './manifest.json',

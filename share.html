@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=./index.html">
+    <title>Ministering Contacts</title>
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const target = new URL('./index.html', window.location.href);
+
+            for (const [key, value] of params.entries()) {
+                target.searchParams.set(key, value);
+            }
+
+            window.location.replace(target.toString());
+        })();
+    </script>
+</head>
+
+<body>
+    <p>Redirecting to Ministering Contacts...</p>
+</body>
+
+</html>

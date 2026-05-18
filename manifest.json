@@ -25,5 +25,14 @@
     ],
     "categories": [
         "productivity"
-    ]
+    ],
+    "share_target": {
+        "action": "share.html",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    }
 }
