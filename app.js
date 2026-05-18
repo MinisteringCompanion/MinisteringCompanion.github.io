@@ -342,6 +342,7 @@ class UIManager {
         this.securityBtn = document.getElementById('securityBtn');
         this.cancelBtn = document.getElementById('cancelBtn');
         this.importFile = document.getElementById('importFile');
+        this.contactCount = document.getElementById('contactCount');
 
         // Form
         this.contactForm = document.getElementById('contactForm');
@@ -745,11 +746,15 @@ class UIManager {
                         const names = selectedContact.name || [];
                         const phones = selectedContact.tel || [];
                         const emails = selectedContact.email || [];
+                        const pickerBirthday = this.extractBirthdayFromSelectedContact(selectedContact);
+                        const birthdayValue = pickerBirthday || this.normalizeBirthdayInput(
+                            prompt(`Birthday for ${names[0] || 'this contact'}? Enter a date like YYYY-MM-DD or MM/DD/YYYY, or leave blank.`)
+                        );
                         const contact = {
                             name: names[0] || 'Unnamed Contact',
                             phone: phones[0] || '',
                             email: emails[0] || '',
-                            birthday: '',
+                            birthday: birthdayValue,
                             notes: ''
                         };
 
@@ -781,6 +786,67 @@ class UIManager {
         this.showFormView();
     }
 
+    extractBirthdayFromSelectedContact(selectedContact) {
+        if (!selectedContact || selectedContact.birthday == null) {
+            return '';
+        }
+
+        const rawBirthday = selectedContact.birthday;
+
+        if (Array.isArray(rawBirthday)) {
+            return this.normalizeBirthdayInput(rawBirthday[0]);
+        }
+
+        if (typeof rawBirthday === 'string') {
+            return this.normalizeBirthdayInput(rawBirthday);
+        }
+
+        if (typeof rawBirthday === 'object') {
+            const year = rawBirthday.year ?? rawBirthday.y;
+            const month = rawBirthday.month ?? rawBirthday.m;
+            const day = rawBirthday.day ?? rawBirthday.d;
+
+            if (year && month && day) {
+                return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+        }
+
+        return '';
+    }
+
+    normalizeBirthdayInput(value) {
+        if (!value) {
+            return '';
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return '';
+        }
+
+        const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            return trimmed;
+        }
+
+        const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+            const month = slashMatch[1].padStart(2, '0');
+            const day = slashMatch[2].padStart(2, '0');
+            return `${slashMatch[3]}-${month}-${day}`;
+        }
+
+        const parsed = new Date(trimmed);
+        if (!Number.isNaN(parsed.getTime())) {
+            const year = parsed.getFullYear();
+            const month = String(parsed.getMonth() + 1).padStart(2, '0');
+            const day = String(parsed.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        return '';
+    }
+
     showShareView(sharedData) {
         this.sharedData = sharedData;
         this.sharedContent.textContent = sharedData.text || sharedData.url || 'Shared content';
@@ -807,6 +873,14 @@ class UIManager {
 
     render() {
         const contacts = this.contactManager.getAllContacts();
+
+        const total = contacts.length;
+        if (this.contactCount) {
+            this.contactCount.textContent = `${total}/10 contacts`;
+        }
+        if (this.addContactBtn) {
+            this.addContactBtn.disabled = total >= 10;
+        }
 
         if (contacts.length === 0) {
             this.contactsList.innerHTML = '';

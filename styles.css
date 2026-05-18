@@ -53,6 +53,26 @@ header h1 {
     flex-wrap: wrap;
 }
 
+.header-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.contact-count {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.12);
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.btn[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .hidden {
     display: none !important;
 }
