@@ -29,7 +29,8 @@ body.app-locked {
 }
 
 body.app-locked .container {
-    filter: blur(1.5px);
+    visibility: hidden;
+    opacity: 0;
     pointer-events: none;
     user-select: none;
     overflow: hidden;
