@@ -350,9 +350,7 @@ class UIManager {
         this.nameInput = document.getElementById('name');
         this.phoneInput = document.getElementById('phone');
         this.emailInput = document.getElementById('email');
-        this.birthdayMonthInput = document.getElementById('birthdayMonth');
-        this.birthdayDayInput = document.getElementById('birthdayDay');
-        this.birthdayYearInput = document.getElementById('birthdayYear');
+        this.birthdayInput = document.getElementById('birthday');
         this.notesInput = document.getElementById('notes');
 
         // Share
@@ -728,8 +726,8 @@ class UIManager {
                 this.nameInput.value = contact.name;
                 this.phoneInput.value = contact.phone || '';
                 this.emailInput.value = contact.email || '';
+                this.birthdayInput.value = contact.birthday || '';
                 this.notesInput.value = contact.notes || '';
-                this.setBirthdayFromString(contact.birthday);
             }
         } else {
             this.formTitle.textContent = 'Add Contact';
@@ -915,7 +913,8 @@ class UIManager {
             detailsHTML += `<div class="contact-detail"><span>📱</span> ${contact.phone}</div>`;
         }
         if (contact.birthday) {
-            const formattedBday = this.formatBirthdayForDisplay(contact.birthday);
+            const bday = new Date(contact.birthday);
+            const formattedBday = bday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             detailsHTML += `<div class="contact-detail"><span>🎂</span> ${formattedBday}</div>`;
         }
         if (contact.email && !isShareMode) {
@@ -943,16 +942,6 @@ class UIManager {
 
             card.querySelector('.edit-btn').addEventListener('click', () => this.showFormView(contact.id));
             card.querySelector('.delete-btn').addEventListener('click', () => this.showDeleteConfirm(contact.id, contact.name));
-
-            if (contact.phone || contact.email) {
-                const contactActionsHTML = `
-                    <div class="contact-direct-actions">
-                        ${contact.phone ? `<a href="sms:${contact.phone}" class="btn btn-small">📱 Text</a>` : ''}
-                        ${contact.email ? `<a href="mailto:${contact.email}" class="btn btn-small">✉️ Email</a>` : ''}
-                    </div>
-                `;
-                card.innerHTML += contactActionsHTML;
-            }
         } else {
             const sharedText = this.sharedData?.text || this.sharedData?.url || '';
             const shareActions = document.createElement('div');
@@ -984,64 +973,7 @@ class UIManager {
 
     clearForm() {
         this.contactForm.reset();
-        this.birthdayMonthInput.value = '';
-        this.birthdayDayInput.value = '';
-        this.birthdayYearInput.value = '';
         this.currentEditId = null;
-    }
-
-    setBirthdayFromString(birthdayString) {
-        if (!birthdayString) {
-            this.birthdayMonthInput.value = '';
-            this.birthdayDayInput.value = '';
-            this.birthdayYearInput.value = '';
-            return;
-        }
-
-        const parts = birthdayString.split('-');
-        if (parts.length >= 2) {
-            this.birthdayMonthInput.value = parts[0];
-            this.birthdayDayInput.value = parts[1].replace(/^0/, '');
-            if (parts.length >= 3 && parts[2]) {
-                this.birthdayYearInput.value = parts[2];
-            } else {
-                this.birthdayYearInput.value = '';
-            }
-        }
-    }
-
-    getBirthdayString() {
-        const month = this.birthdayMonthInput.value;
-        const day = this.birthdayDayInput.value;
-        const year = this.birthdayYearInput.value;
-
-        if (!month || !day) {
-            return '';
-        }
-
-        const paddedMonth = month.padStart(2, '0');
-        const paddedDay = day.padStart(2, '0');
-        const birthdayDate = `${paddedMonth}-${paddedDay}`;
-
-        return year ? `${year}-${birthdayDate}` : birthdayDate;
-    }
-
-    formatBirthdayForDisplay(birthdayString) {
-        if (!birthdayString) {
-            return '';
-        }
-
-        const parts = birthdayString.split('-');
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-        if (parts.length >= 2) {
-            const monthIndex = parseInt(parts[0], 10) - 1;
-            const day = parts[1];
-            const monthName = months[monthIndex] || '';
-            return `${monthName} ${day}`;
-        }
-
-        return '';
     }
 
     handleFormSubmit(e) {
@@ -1051,7 +983,7 @@ class UIManager {
             name: this.nameInput.value.trim(),
             phone: this.phoneInput.value.trim(),
             email: this.emailInput.value.trim(),
-            birthday: this.getBirthdayString(),
+            birthday: this.birthdayInput.value,
             notes: this.notesInput.value.trim()
         };
 
