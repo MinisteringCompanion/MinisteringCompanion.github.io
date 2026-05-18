@@ -18,6 +18,10 @@ body {
     line-height: 1.6;
 }
 
+body.app-locked {
+    overflow: hidden;
+}
+
 /* Container and Layout */
 .container {
     max-width: 600px;
@@ -26,6 +30,12 @@ body {
     display: flex;
     flex-direction: column;
     background: white;
+}
+
+body.app-locked .container {
+    filter: blur(8px);
+    pointer-events: none;
+    user-select: none;
 }
 
 header {
@@ -45,6 +55,10 @@ header h1 {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.header-actions .btn {
+    white-space: nowrap;
 }
 
 .hidden {
@@ -350,6 +364,130 @@ main {
     flex: 1;
 }
 
+/* Security Dialog */
+.security-modal-content {
+    max-width: 440px;
+}
+
+.security-description {
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.security-section {
+    padding: 16px 0;
+    border-top: 1px solid #ececec;
+}
+
+.security-section h4 {
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: #222;
+}
+
+.security-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.security-actions .btn {
+    flex: 1 1 150px;
+}
+
+.security-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #333;
+}
+
+.security-toggle input {
+    width: 16px;
+    height: 16px;
+}
+
+.security-status {
+    margin-top: 16px;
+    color: #666;
+    font-size: 13px;
+    min-height: 1.25em;
+}
+
+/* Lock Screen */
+.lock-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background:
+        radial-gradient(circle at top, rgba(76, 175, 80, 0.26), transparent 45%),
+        linear-gradient(135deg, #102018 0%, #1b2a22 50%, #0f1512 100%);
+}
+
+.lock-card {
+    width: min(100%, 420px);
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.lock-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #ecf8ed;
+    color: #2f7a34;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.lock-card h2 {
+    margin-bottom: 10px;
+    color: #162019;
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.lock-message {
+    margin-bottom: 20px;
+    color: #55615a;
+    font-size: 14px;
+}
+
+.lock-form-group {
+    margin-bottom: 18px;
+}
+
+.lock-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lock-actions .btn {
+    flex: 1 1 150px;
+}
+
+.lock-status {
+    min-height: 1.25em;
+    margin-top: 14px;
+    color: #b42318;
+    font-size: 13px;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .container {
@@ -386,6 +524,15 @@ main {
 
     .modal {
         max-width: 90%;
+    }
+
+    .lock-card {
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .lock-card h2 {
+        font-size: 24px;
     }
 }
 

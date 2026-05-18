@@ -16,10 +16,11 @@
 <body>
     <div class="container">
         <header>
-            <h1>Ministering Contacts v7</h1>
+            <h1>Ministering Contacts v8</h1>
             <div class="header-actions">
                 <button id="addContactBtn" class="btn btn-primary">+ Add Contact</button>
                 <button id="importBtn" class="btn btn-secondary">📁 Import</button>
+                <button id="securityBtn" class="btn btn-secondary">🔒 Security</button>
             </div>
         </header>
 
@@ -91,6 +92,75 @@
 
     <!-- Modal Overlay -->
     <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <!-- Security Dialog -->
+    <div id="securityDialog" class="modal hidden security-modal" role="dialog" aria-modal="true"
+        aria-labelledby="securityTitle">
+        <div class="modal-content security-modal-content">
+            <h3 id="securityTitle">App Security</h3>
+            <p class="security-description">Set a PIN to protect the app. If your browser supports it, you can also
+                unlock with biometrics or a device passkey.</p>
+
+            <div class="security-section">
+                <h4>PIN</h4>
+                <div class="form-group">
+                    <label for="currentPin">Current PIN</label>
+                    <input type="password" id="currentPin" inputmode="numeric" autocomplete="current-password"
+                        placeholder="Required if a PIN already exists">
+                </div>
+                <div class="form-group">
+                    <label for="newPin">New PIN</label>
+                    <input type="password" id="newPin" inputmode="numeric" autocomplete="new-password"
+                        placeholder="4 to 12 digits">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPin">Confirm PIN</label>
+                    <input type="password" id="confirmPin" inputmode="numeric" autocomplete="new-password"
+                        placeholder="Repeat the new PIN">
+                </div>
+                <div class="security-actions">
+                    <button id="savePinBtn" class="btn btn-primary" type="button">Save PIN</button>
+                    <button id="removePinBtn" class="btn btn-danger" type="button">Remove PIN</button>
+                </div>
+            </div>
+
+            <div class="security-section">
+                <h4>Biometrics</h4>
+                <label class="security-toggle">
+                    <input type="checkbox" id="biometricEnabled">
+                    <span>Allow biometric or device-passkey unlock</span>
+                </label>
+                <div class="security-actions">
+                    <button id="enrollBiometricBtn" class="btn btn-secondary" type="button">Set Up Biometrics</button>
+                    <button id="lockNowBtn" class="btn btn-secondary" type="button">Lock Now</button>
+                </div>
+            </div>
+
+            <p id="securityStatus" class="security-status" aria-live="polite"></p>
+            <div class="modal-actions">
+                <button id="securityCloseBtn" class="btn btn-secondary" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Lock Screen -->
+    <div id="lockScreen" class="lock-screen hidden" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+        <div class="lock-card">
+            <div class="lock-badge">Protected app</div>
+            <h2 id="lockTitle">Unlock Ministering Contacts</h2>
+            <p id="lockMessage" class="lock-message">Enter your app PIN to continue.</p>
+            <div class="form-group lock-form-group">
+                <label for="unlockPin">PIN</label>
+                <input type="password" id="unlockPin" inputmode="numeric" autocomplete="current-password"
+                    placeholder="Enter PIN">
+            </div>
+            <div class="lock-actions">
+                <button id="unlockPinBtn" class="btn btn-primary" type="button">Unlock</button>
+                <button id="unlockBiometricBtn" class="btn btn-secondary" type="button">Use Biometrics</button>
+            </div>
+            <p id="lockStatus" class="lock-status" aria-live="polite"></p>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ministering-v7';
+const CACHE_NAME = 'ministering-v8';
 const urlsToCache = [
     './',
     './index.html',
