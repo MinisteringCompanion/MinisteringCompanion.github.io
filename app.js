@@ -382,7 +382,10 @@ class UIManager {
 
     attachEventListeners() {
         this.addContactBtn.addEventListener('click', () => this.handleAddContact());
-        this.importBtn.addEventListener('click', () => this.importFile.click());
+        this.importBtn.addEventListener('click', (e) => {
+            if (this.importBtn.disabled) return;
+            this.importFile.click();
+        });
         this.securityBtn.addEventListener('click', () => this.openSecuritySettings());
         this.cancelBtn.addEventListener('click', () => this.showContactsView());
         this.contactForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -880,6 +883,12 @@ class UIManager {
         }
         if (this.addContactBtn) {
             this.addContactBtn.disabled = total >= 10;
+        }
+        if (this.importBtn) {
+            this.importBtn.disabled = total >= 10;
+        }
+        if (this.importFile) {
+            this.importFile.disabled = total >= 10;
         }
 
         if (contacts.length === 0) {
