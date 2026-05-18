@@ -338,8 +338,9 @@ main {
     gap: 12px;
 }
 
-margin-bottom: 20px;
-color: #666;
+.modal p {
+    margin-bottom: 20px;
+    color: #666;
 }
 
 .modal-actions {
@@ -351,48 +352,52 @@ color: #666;
     flex: 1;
 }
 
+.security-modal-content {
+    min-width: min(92vw, 420px);
+}
+
+.security-biometrics-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: #444;
+    margin-top: 2px;
+}
+
+.security-biometrics-row input {
+    margin-top: 4px;
+}
+
+.security-hint {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+    min-height: 1.2em;
+}
+
+.security-hint.error {
+    color: #c62828;
+    font-weight: 600;
+}
+
+.security-actions {
+    flex-wrap: wrap;
+}
+
+.security-actions button {
+    min-width: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .container {
         max-width: 100%;
         border-radius: 0;
+        flex-direction: column;
+    }
 
-        .security-modal-content {
-            min-width: min(92vw, 420px);
-        }
-
-        .security-biometrics-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 14px;
-            color: #444;
-            margin-top: 2px;
-        }
-
-        .security-biometrics-row input {
-            margin-top: 4px;
-        }
-
-        .security-hint {
-            margin: 0;
-            font-size: 13px;
-            color: #666;
-            min-height: 1.2em;
-        }
-
-        .security-actions {
-            flex-wrap: wrap;
-        }
-
-        .security-actions button {
-            min-width: 0;
-        }
-
-        .security-actions {
-            flex-direction: column;
-        }
-
+    .security-actions {
         flex-direction: column;
     }
 

@@ -294,6 +294,8 @@ class UIManager {
         this.currentEditId = null;
         this.sharedData = null;
         this.securityMode = 'unlock';
+        this.biometricPromptCanceled = false;
+        this.biometricPromptInProgress = false;
         this.initElements();
         this.attachEventListeners();
         this.render();
@@ -409,6 +411,10 @@ class UIManager {
         this.securityDialog.classList.remove('hidden');
         this.modalOverlay.classList.remove('hidden');
         this.securityPinInput.focus();
+
+        if (mode === 'unlock') {
+            this.tryDefaultBiometricUnlock();
+        }
     }
 
     closeSecurityDialog() {
@@ -433,7 +439,50 @@ class UIManager {
         this.securityPinConfirmInput.value = '';
         this.securityBiometricOptIn.checked = false;
         this.securityBiometricOptIn.disabled = false;
-        this.securityHint.textContent = '';
+        this.biometricPromptCanceled = false;
+        this.biometricPromptInProgress = false;
+        this.setSecurityHint('');
+    }
+
+    setSecurityHint(message, isError = false) {
+        this.securityHint.textContent = message;
+        this.securityHint.classList.toggle('error', isError);
+    }
+
+    isBiometricCancelError(error) {
+        return Boolean(error && (error.name === 'NotAllowedError' || error.name === 'AbortError'));
+    }
+
+    async tryDefaultBiometricUnlock() {
+        const canAutostart = this.securityMode === 'unlock'
+            && this.securityManager.canUseBiometrics()
+            && this.securityManager.hasBiometricCredential();
+
+        if (!canAutostart || this.biometricPromptCanceled || this.biometricPromptInProgress) {
+            return;
+        }
+
+        this.biometricPromptInProgress = true;
+        try {
+            const unlocked = await this.securityManager.unlockWithBiometric();
+            if (unlocked) {
+                this.finishUnlock();
+                return;
+            }
+
+            this.biometricPromptCanceled = true;
+            this.setSecurityHint('Biometric unlock canceled. Enter your PIN.', true);
+        } catch (error) {
+            if (this.isBiometricCancelError(error)) {
+                this.biometricPromptCanceled = true;
+                this.setSecurityHint('Biometric unlock canceled. Enter your PIN.', true);
+            } else {
+                console.error('Biometric unlock failed:', error);
+                this.setSecurityHint('Biometric unlock failed. Enter your PIN.', true);
+            }
+        } finally {
+            this.biometricPromptInProgress = false;
+        }
     }
 
     configureSecurityDialog(mode) {
@@ -449,9 +498,9 @@ class UIManager {
             this.securityBiometricBtn.classList.add('hidden');
             this.securityBiometricOptIn.disabled = !biometricAvailable;
             this.securitySubmit.textContent = 'Save PIN';
-            this.securityHint.textContent = biometricAvailable
+            this.setSecurityHint(biometricAvailable
                 ? 'Biometrics can be enabled while you save the PIN.'
-                : 'Biometric unlock is unavailable on this browser or in this context.';
+                : 'Biometric unlock is unavailable on this browser or in this context.');
             return;
         }
 
@@ -466,9 +515,9 @@ class UIManager {
             this.securitySubmit.textContent = 'Update PIN';
             this.securityBiometricOptIn.checked = biometricEnrolled;
             this.securityBiometricOptIn.disabled = !biometricAvailable;
-            this.securityHint.textContent = biometricAvailable
+            this.setSecurityHint(biometricAvailable
                 ? 'Leave biometric enabled to keep using face or fingerprint unlock.'
-                : 'Biometric setup is not available on this device.';
+                : 'Biometric setup is not available on this device.');
             return;
         }
 
@@ -480,9 +529,9 @@ class UIManager {
         this.securityBiometricBtn.classList.toggle('hidden', !(biometricAvailable && biometricEnrolled));
         this.securityBiometricBtn.textContent = 'Unlock with biometrics';
         this.securitySubmit.textContent = 'Unlock';
-        this.securityHint.textContent = biometricAvailable && biometricEnrolled
+        this.setSecurityHint(biometricAvailable && biometricEnrolled
             ? 'Biometric unlock is available for this device.'
-            : 'Use your PIN to unlock the app.';
+            : 'Use your PIN to unlock the app.');
     }
 
     finishUnlock() {
@@ -501,32 +550,32 @@ class UIManager {
 
         if (this.securityMode === 'unlock') {
             if (!pin) {
-                this.securityHint.textContent = 'Enter your PIN to unlock the app.';
+                this.setSecurityHint('Enter your PIN to unlock the app.', true);
                 return;
             }
 
             try {
                 const valid = await this.securityManager.verifyPin(pin);
                 if (!valid) {
-                    this.securityHint.textContent = 'That PIN is not correct.';
+                    this.setSecurityHint('That PIN is not correct.', true);
                     return;
                 }
 
                 this.finishUnlock();
             } catch (error) {
                 console.error('Failed to verify PIN:', error);
-                this.securityHint.textContent = 'Unable to verify the PIN right now.';
+                this.setSecurityHint('Unable to verify the PIN right now.', true);
             }
             return;
         }
 
         if (pin.length < 4) {
-            this.securityHint.textContent = 'Choose a PIN with at least 4 digits.';
+            this.setSecurityHint('Choose a PIN with at least 4 digits.', true);
             return;
         }
 
         if (pin !== confirmPin) {
-            this.securityHint.textContent = 'PIN entries do not match.';
+            this.setSecurityHint('PIN entries do not match.', true);
             return;
         }
 
@@ -535,10 +584,10 @@ class UIManager {
             if (shouldEnableBiometric && this.securityManager.canUseBiometrics()) {
                 try {
                     await this.securityManager.enrollBiometric();
-                    this.securityHint.textContent = 'PIN saved and biometric unlock is enabled.';
+                    this.setSecurityHint('PIN saved and biometric unlock is enabled.');
                 } catch (biometricError) {
                     console.error('Biometric enrollment failed:', biometricError);
-                    this.securityHint.textContent = 'PIN saved. Biometric setup was not completed.';
+                    this.setSecurityHint('PIN saved. Biometric setup was not completed.', true);
                 }
             } else {
                 this.securityManager.clearBiometricCredential();
@@ -546,18 +595,19 @@ class UIManager {
             this.finishUnlock();
         } catch (error) {
             console.error('Failed to save security settings:', error);
-            this.securityHint.textContent = error.message || 'Unable to save security settings.';
+            this.setSecurityHint(error.message || 'Unable to save security settings.', true);
         }
     }
 
     async handleBiometricAction() {
+        this.biometricPromptInProgress = true;
         try {
             if (this.securityMode === 'unlock') {
                 const unlocked = await this.securityManager.unlockWithBiometric();
                 if (unlocked) {
                     this.finishUnlock();
                 } else {
-                    this.securityHint.textContent = 'Biometric sign-in was not completed.';
+                    this.setSecurityHint('Biometric sign-in was not completed.', true);
                 }
                 return;
             }
@@ -565,10 +615,17 @@ class UIManager {
             await this.securityManager.enrollBiometric();
             this.securityBiometricOptIn.checked = true;
             this.securityBiometricOptIn.disabled = false;
-            this.securityHint.textContent = 'Biometric unlock is now enabled for this device.';
+            this.setSecurityHint('Biometric unlock is now enabled for this device.');
         } catch (error) {
             console.error('Biometric action failed:', error);
-            this.securityHint.textContent = error.message || 'Biometric setup failed.';
+            if (this.isBiometricCancelError(error)) {
+                this.biometricPromptCanceled = true;
+                this.setSecurityHint('Biometric sign-in was canceled.', true);
+            } else {
+                this.setSecurityHint(error.message || 'Biometric setup failed.', true);
+            }
+        } finally {
+            this.biometricPromptInProgress = false;
         }
     }
 
