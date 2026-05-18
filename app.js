@@ -212,6 +212,10 @@ class ContactManager {
     }
 
     addContact(contact) {
+        if (this.contacts.length >= 10) {
+            return null;
+        }
+
         contact.id = Date.now().toString();
         this.contacts.push(contact);
         this.saveContacts();
@@ -250,45 +254,50 @@ class ContactManager {
         const lines = csvText.trim().split('\n');
         let imported = 0;
 
-        lines.forEach((line, index) => {
-            if (index === 0) return; // Skip header
-            const parts = line.split(',').map(p => p.trim());
+        for (let index = 0; index < lines.length; index++) {
+            if (index === 0) continue; // Skip header
+            if (this.contacts.length >= 10) break;
+            const parts = lines[index].split(',').map(p => p.trim());
             if (parts.length > 0 && parts[0]) {
                 const contact = {
                     name: parts[0] || '',
                     phone: parts[1] || '',
                     email: parts[2] || '',
-                    birthday: parts[3] || ''
+                    birthday: parts[3] || '',
+                    notes: ''
                 };
-                this.addContact(contact);
-                imported++;
+                const added = this.addContact(contact);
+                if (added) imported++;
             }
-        });
+        }
 
         return imported;
     }
 
     importVCard(vcardText) {
-        const contacts = [];
+        let imported = 0;
         const vCards = vcardText.split('END:VCARD');
 
-        vCards.forEach(vcard => {
-            if (!vcard.includes('BEGIN:VCARD')) return;
+        for (let i = 0; i < vCards.length; i++) {
+            if (this.contacts.length >= 10) break;
+            const vcard = vCards[i];
+            if (!vcard.includes('BEGIN:VCARD')) continue;
 
             const contact = {
                 name: this.extractVCardField(vcard, 'FN') || '',
                 phone: this.extractVCardField(vcard, 'TEL') || '',
                 email: this.extractVCardField(vcard, 'EMAIL') || '',
-                birthday: this.extractVCardField(vcard, 'BDAY') || ''
+                birthday: this.extractVCardField(vcard, 'BDAY') || '',
+                notes: ''
             };
 
             if (contact.name) {
-                this.addContact(contact);
-                contacts.push(contact);
+                const added = this.addContact(contact);
+                if (added) imported++;
             }
-        });
+        }
 
-        return contacts.length;
+        return imported;
     }
 
     extractVCardField(vcard, field) {
@@ -744,18 +753,29 @@ class UIManager {
                             notes: ''
                         };
 
-                        this.contactManager.addContact(contact);
-                        return count + 1;
+                        const added = this.contactManager.addContact(contact);
+                        return added ? count + 1 : count;
                     }, 0);
 
                     if (addedCount > 0) {
                         this.render();
+                        if (addedCount < selectedContacts.length) {
+                            alert(`Added ${addedCount} contact(s). Reached maximum of 10 contacts.`);
+                        }
                         return;
                     }
+
+                    alert('Unable to add contacts. Maximum of 10 contacts allowed.');
                 }
             } catch (error) {
                 console.log('Contacts picker unavailable or cancelled:', error);
             }
+        }
+
+        // Prevent opening the add form if at capacity
+        if (this.contactManager.getAllContacts().length >= 10) {
+            alert('Maximum of 10 contacts allowed. Delete an existing contact to add another.');
+            return;
         }
 
         this.showFormView();
@@ -923,12 +943,24 @@ class UIManager {
             let imported = 0;
 
             if (file.name.endsWith('.csv')) {
+                const lines = content.trim().split('\n');
+                const expected = Math.max(0, lines.length - 1);
                 imported = this.contactManager.importCSV(content);
+                if (imported < expected && this.contactManager.getAllContacts().length >= 10) {
+                    alert(`Imported ${imported} contact(s). Reached maximum of 10 contacts; ${expected - imported} were not imported.`);
+                } else {
+                    alert(`Imported ${imported} contact(s).`);
+                }
             } else if (file.name.endsWith('.vcf')) {
+                const expected = (content.match(/BEGIN:VCARD/gi) || []).length;
                 imported = this.contactManager.importVCard(content);
+                if (imported < expected && this.contactManager.getAllContacts().length >= 10) {
+                    alert(`Imported ${imported} contact(s). Reached maximum of 10 contacts; ${expected - imported} were not imported.`);
+                } else {
+                    alert(`Imported ${imported} contact(s).`);
+                }
             }
 
-            alert(`Imported ${imported} contact${imported !== 1 ? 's' : ''}.`);
             this.render();
         };
         reader.readAsText(file);
