@@ -497,6 +497,7 @@ class UIManager {
 
         const pin = this.securityPinInput.value.trim();
         const confirmPin = this.securityPinConfirmInput.value.trim();
+        const shouldEnableBiometric = this.securityBiometricOptIn.checked;
 
         if (this.securityMode === 'unlock') {
             if (!pin) {
@@ -531,7 +532,7 @@ class UIManager {
 
         try {
             await this.securityManager.setPin(pin);
-            if (this.securityBiometricOptIn.checked && this.securityManager.canUseBiometrics()) {
+            if (shouldEnableBiometric && this.securityManager.canUseBiometrics()) {
                 try {
                     await this.securityManager.enrollBiometric();
                     this.securityHint.textContent = 'PIN saved and biometric unlock is enabled.';
@@ -539,6 +540,8 @@ class UIManager {
                     console.error('Biometric enrollment failed:', biometricError);
                     this.securityHint.textContent = 'PIN saved. Biometric setup was not completed.';
                 }
+            } else {
+                this.securityManager.clearBiometricCredential();
             }
             this.finishUnlock();
         } catch (error) {
