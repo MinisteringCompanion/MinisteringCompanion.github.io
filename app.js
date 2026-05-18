@@ -979,4 +979,59 @@ document.addEventListener('DOMContentLoaded', () => {
     contactManager = new ContactManager();
     securityManager = new SecurityManager();
     uiManager = new UIManager(contactManager, securityManager);
+
+    // First-time modal setup
+    initializeFirstTimeModal();
 });
+
+function initializeFirstTimeModal() {
+    const FIRST_TIME_USER_KEY = 'ministering_app_first_time_user';
+    const firstTimeModal = document.getElementById('firstTimeModal');
+    const closeFirstTimeModalBtn = document.getElementById('closeFirstTimeModal');
+    const getStartedBtn = document.getElementById('getStartedBtn');
+    const floatingHelpBtn = document.getElementById('floatingHelpBtn');
+    const modalOverlay = document.getElementById('modalOverlay');
+
+    // Check if this is the first time user
+    const isFirstTimeUser = !localStorage.getItem(FIRST_TIME_USER_KEY);
+
+    // Function to show the modal
+    function showFirstTimeModal() {
+        firstTimeModal.classList.remove('hidden');
+        modalOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Function to close the modal
+    function closeFirstTimeModal() {
+        firstTimeModal.classList.add('hidden');
+        modalOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+
+        // Mark user as no longer a first-time user
+        localStorage.setItem(FIRST_TIME_USER_KEY, 'true');
+    }
+
+    // Show modal on first visit
+    if (isFirstTimeUser) {
+        showFirstTimeModal();
+    }
+
+    // Close button event listener
+    closeFirstTimeModalBtn.addEventListener('click', closeFirstTimeModal);
+
+    // Get Started button event listener
+    getStartedBtn.addEventListener('click', closeFirstTimeModal);
+
+    // Floating help button event listener
+    floatingHelpBtn.addEventListener('click', () => {
+        showFirstTimeModal();
+    });
+
+    // Modal overlay click to close
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeFirstTimeModal();
+        }
+    });
+}
