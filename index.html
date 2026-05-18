@@ -16,7 +16,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Ministering Contacts v7</h1>
+            <h1>Ministering Contacts v9</h1>
             <div class="header-actions">
                 <button id="addContactBtn" class="btn btn-primary">+ Add Contact</button>
                 <button id="importBtn" class="btn btn-secondary">📁 Import</button>
@@ -54,6 +54,11 @@
                     <div class="form-group">
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="4"
+                            placeholder="Likes, preferences, reminders, and other notes"></textarea>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Save</button>
@@ -114,6 +119,7 @@
                 <div class="modal-actions security-actions">
                     <button type="button" id="securityCancel" class="btn btn-secondary">Cancel</button>
                     <button type="button" id="securityBiometricBtn" class="btn btn-secondary">Use biometrics</button>
+                    <button type="button" id="securitySaveSettings" class="btn btn-primary">Save Settings</button>
                     <button type="submit" id="securitySubmit" class="btn btn-primary">Save PIN</button>
                 </div>
             </form>

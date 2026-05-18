@@ -244,10 +244,36 @@ main {
     transition: border-color 0.2s ease;
 }
 
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+    resize: vertical;
+    min-height: 88px;
+}
+
 .form-group input:focus {
     outline: none;
     border-color: #4CAF50;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.contact-notes {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #4b4b4b;
+    white-space: pre-wrap;
 }
 
 .form-actions {
@@ -327,7 +353,9 @@ main {
     background: white;
     border-radius: 8px;
     padding: 24px;
-    max-width: 400px;
+    width: min(92vw, 420px);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -397,6 +425,23 @@ main {
         flex-direction: column;
     }
 
+    .modal {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        max-height: 88vh;
+        border-radius: 16px 16px 0 0;
+        padding: 18px 16px 16px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
     .security-actions {
         flex-direction: column;
     }
@@ -420,8 +465,8 @@ main {
         flex: 1;
     }
 
-    .modal {
-        max-width: 90%;
+    .modal-content {
+        gap: 10px;
     }
 }
 

@@ -326,6 +326,7 @@ class UIManager {
         this.phoneInput = document.getElementById('phone');
         this.emailInput = document.getElementById('email');
         this.birthdayInput = document.getElementById('birthday');
+        this.notesInput = document.getElementById('notes');
 
         // Share
         this.shareContactsList = document.getElementById('shareContactsList');
@@ -351,6 +352,7 @@ class UIManager {
         this.securityHint = document.getElementById('securityHint');
         this.securityCancel = document.getElementById('securityCancel');
         this.securityBiometricBtn = document.getElementById('securityBiometricBtn');
+        this.securitySaveSettings = document.getElementById('securitySaveSettings');
         this.securitySubmit = document.getElementById('securitySubmit');
     }
 
@@ -366,6 +368,7 @@ class UIManager {
         this.securityForm.addEventListener('submit', (e) => this.handleSecuritySubmit(e));
         this.securityCancel.addEventListener('click', () => this.closeSecurityDialog());
         this.securityBiometricBtn.addEventListener('click', () => this.handleBiometricAction());
+        this.securitySaveSettings.addEventListener('click', () => this.handleSecuritySettingsSave());
         this.modalOverlay.addEventListener('click', () => this.handleOverlayClick());
 
         // Check for shared data
@@ -496,6 +499,7 @@ class UIManager {
             this.securityBiometricOptIn.parentElement.classList.remove('hidden');
             this.securityCancel.classList.add('hidden');
             this.securityBiometricBtn.classList.add('hidden');
+            this.securitySaveSettings.classList.add('hidden');
             this.securityBiometricOptIn.disabled = !biometricAvailable;
             this.securitySubmit.textContent = 'Save PIN';
             this.setSecurityHint(biometricAvailable
@@ -511,6 +515,7 @@ class UIManager {
             this.securityBiometricOptIn.parentElement.classList.remove('hidden');
             this.securityCancel.classList.remove('hidden');
             this.securityBiometricBtn.classList.toggle('hidden', !biometricAvailable);
+            this.securitySaveSettings.classList.remove('hidden');
             this.securityBiometricBtn.textContent = biometricEnrolled ? 'Re-enroll biometrics' : 'Set up biometrics';
             this.securitySubmit.textContent = 'Update PIN';
             this.securityBiometricOptIn.checked = biometricEnrolled;
@@ -527,11 +532,47 @@ class UIManager {
         this.securityBiometricOptIn.parentElement.classList.add('hidden');
         this.securityCancel.classList.add('hidden');
         this.securityBiometricBtn.classList.toggle('hidden', !(biometricAvailable && biometricEnrolled));
+        this.securitySaveSettings.classList.add('hidden');
         this.securityBiometricBtn.textContent = 'Unlock with biometrics';
         this.securitySubmit.textContent = 'Unlock';
         this.setSecurityHint(biometricAvailable && biometricEnrolled
             ? 'Biometric unlock is available for this device.'
             : 'Use your PIN to unlock the app.');
+    }
+
+    async handleSecuritySettingsSave() {
+        if (this.securityMode !== 'manage') {
+            return;
+        }
+
+        const shouldEnableBiometric = this.securityBiometricOptIn.checked;
+        try {
+            if (!shouldEnableBiometric) {
+                this.securityManager.clearBiometricCredential();
+                this.setSecurityHint('Security settings saved. Biometric unlock is disabled.');
+                this.closeSecurityDialog();
+                return;
+            }
+
+            if (!this.securityManager.canUseBiometrics()) {
+                this.setSecurityHint('Biometric setup is not available on this device.', true);
+                return;
+            }
+
+            if (!this.securityManager.hasBiometricCredential()) {
+                await this.securityManager.enrollBiometric();
+            }
+
+            this.setSecurityHint('Security settings saved. Biometric unlock is enabled.');
+            this.closeSecurityDialog();
+        } catch (error) {
+            console.error('Failed to save security settings:', error);
+            if (this.isBiometricCancelError(error)) {
+                this.setSecurityHint('Biometric setup was canceled. Settings were not changed.', true);
+            } else {
+                this.setSecurityHint(error.message || 'Unable to save settings right now.', true);
+            }
+        }
     }
 
     finishUnlock() {
@@ -570,6 +611,10 @@ class UIManager {
         }
 
         if (pin.length < 4) {
+            if (this.securityMode === 'manage' && pin.length === 0 && confirmPin.length === 0) {
+                this.setSecurityHint('Enter a new PIN to update it, or use Save Settings.', true);
+                return;
+            }
             this.setSecurityHint('Choose a PIN with at least 4 digits.', true);
             return;
         }
@@ -648,6 +693,7 @@ class UIManager {
                 this.phoneInput.value = contact.phone || '';
                 this.emailInput.value = contact.email || '';
                 this.birthdayInput.value = contact.birthday || '';
+                this.notesInput.value = contact.notes || '';
             }
         } else {
             this.formTitle.textContent = 'Add Contact';
@@ -673,7 +719,8 @@ class UIManager {
                             name: names[0] || 'Unnamed Contact',
                             phone: phones[0] || '',
                             email: emails[0] || '',
-                            birthday: ''
+                            birthday: '',
+                            notes: ''
                         };
 
                         this.contactManager.addContact(contact);
@@ -754,6 +801,7 @@ class UIManager {
             <div class="contact-info">
                 <div class="contact-name">${escapeHtml(contact.name)}</div>
                 <div class="contact-details">${detailsHTML}</div>
+                ${contact.notes ? `<div class="contact-notes">${escapeHtml(contact.notes)}</div>` : ''}
             </div>
         `;
 
@@ -811,7 +859,8 @@ class UIManager {
             name: this.nameInput.value.trim(),
             phone: this.phoneInput.value.trim(),
             email: this.emailInput.value.trim(),
-            birthday: this.birthdayInput.value
+            birthday: this.birthdayInput.value,
+            notes: this.notesInput.value.trim()
         };
 
         if (!contact.name) {
