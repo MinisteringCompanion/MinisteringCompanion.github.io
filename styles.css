@@ -47,16 +47,16 @@ header h1 {
     flex-wrap: wrap;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .api-note {
     margin-top: 10px;
     font-size: 13px;
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.92);
     max-width: 32rem;
-}
-
-.api-note.hidden {
-    display: none;
 }
 
 main {
