@@ -304,6 +304,31 @@ body.app-locked main {
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
+.birthday-inputs {
+    display: grid;
+    grid-template-columns: 1.2fr 0.7fr 0.9fr;
+    gap: 8px;
+}
+
+.birthday-inputs select,
+.birthday-inputs input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+    background: #fff;
+}
+
+.birthday-inputs select:focus,
+.birthday-inputs input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
 .contact-notes {
     margin-top: 8px;
     font-size: 13px;

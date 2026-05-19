@@ -350,7 +350,9 @@ class UIManager {
         this.nameInput = document.getElementById('name');
         this.phoneInput = document.getElementById('phone');
         this.emailInput = document.getElementById('email');
-        this.birthdayInput = document.getElementById('birthday');
+        this.birthdayMonthInput = document.getElementById('birthdayMonth');
+        this.birthdayDayInput = document.getElementById('birthdayDay');
+        this.birthdayYearInput = document.getElementById('birthdayYear');
         this.notesInput = document.getElementById('notes');
 
         // Share
@@ -726,8 +728,8 @@ class UIManager {
                 this.nameInput.value = contact.name;
                 this.phoneInput.value = contact.phone || '';
                 this.emailInput.value = contact.email || '';
-                this.birthdayInput.value = contact.birthday || '';
                 this.notesInput.value = contact.notes || '';
+                this.setBirthdayFields(contact.birthday || '');
             }
         } else {
             this.formTitle.textContent = 'Add Contact';
@@ -832,11 +834,25 @@ class UIManager {
             return trimmed;
         }
 
+        const monthDayMatch = trimmed.match(/^(\d{1,2})-(\d{1,2})$/);
+        if (monthDayMatch) {
+            const month = monthDayMatch[1].padStart(2, '0');
+            const day = monthDayMatch[2].padStart(2, '0');
+            return `${month}-${day}`;
+        }
+
         const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (slashMatch) {
             const month = slashMatch[1].padStart(2, '0');
             const day = slashMatch[2].padStart(2, '0');
             return `${slashMatch[3]}-${month}-${day}`;
+        }
+
+        const monthDaySlashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})$/);
+        if (monthDaySlashMatch) {
+            const month = monthDaySlashMatch[1].padStart(2, '0');
+            const day = monthDaySlashMatch[2].padStart(2, '0');
+            return `${month}-${day}`;
         }
 
         const parsed = new Date(trimmed);
@@ -913,8 +929,7 @@ class UIManager {
             detailsHTML += `<div class="contact-detail"><span>📱</span> ${contact.phone}</div>`;
         }
         if (contact.birthday) {
-            const bday = new Date(contact.birthday);
-            const formattedBday = bday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const formattedBday = this.formatBirthdayForDisplay(contact.birthday);
             detailsHTML += `<div class="contact-detail"><span>🎂</span> ${formattedBday}</div>`;
         }
         if (contact.email && !isShareMode) {
@@ -973,17 +988,140 @@ class UIManager {
 
     clearForm() {
         this.contactForm.reset();
+        this.birthdayMonthInput.value = '';
+        this.birthdayDayInput.value = '';
+        this.birthdayYearInput.value = '';
         this.currentEditId = null;
+    }
+
+    setBirthdayFields(birthdayValue) {
+        this.birthdayMonthInput.value = '';
+        this.birthdayDayInput.value = '';
+        this.birthdayYearInput.value = '';
+
+        if (!birthdayValue) {
+            return;
+        }
+
+        const normalized = this.normalizeBirthdayInput(birthdayValue);
+        if (!normalized) {
+            return;
+        }
+
+        const parts = normalized.split('-');
+        if (parts.length === 3) {
+            this.birthdayYearInput.value = parts[0];
+            this.birthdayMonthInput.value = parts[1];
+            this.birthdayDayInput.value = String(parseInt(parts[2], 10));
+            return;
+        }
+
+        if (parts.length === 2) {
+            this.birthdayMonthInput.value = parts[0];
+            this.birthdayDayInput.value = String(parseInt(parts[1], 10));
+        }
+    }
+
+    getBirthdayValue() {
+        const month = this.birthdayMonthInput.value;
+        const day = this.birthdayDayInput.value;
+        const year = this.birthdayYearInput.value.trim();
+
+        if (!month || !day) {
+            return '';
+        }
+
+        const monthValue = month.padStart(2, '0');
+        const dayValue = String(parseInt(day, 10)).padStart(2, '0');
+        return year ? `${year}-${monthValue}-${dayValue}` : `${monthValue}-${dayValue}`;
+    }
+
+    validateBirthdayFields() {
+        const month = parseInt(this.birthdayMonthInput.value, 10);
+        const day = parseInt(this.birthdayDayInput.value, 10);
+        const yearValue = this.birthdayYearInput.value.trim();
+
+        if (!month && !day && !yearValue) {
+            return '';
+        }
+
+        if (!month || !day) {
+            return 'Please choose both a month and a day for the birthday.';
+        }
+
+        const maxDayByMonth = [31, this.isLeapYear(yearValue) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const maxDay = maxDayByMonth[month - 1];
+
+        if (!maxDay) {
+            return 'Please choose a valid birthday month.';
+        }
+
+        if (day < 1 || day > maxDay) {
+            const monthName = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month - 1];
+            return `${monthName} does not have ${day} days.`;
+        }
+
+        if (yearValue) {
+            const year = parseInt(yearValue, 10);
+            if (Number.isNaN(year) || yearValue.length !== 4) {
+                return 'Please enter a four-digit year, or leave the year blank.';
+            }
+        }
+
+        return '';
+    }
+
+    isLeapYear(yearValue) {
+        if (!yearValue) {
+            return true;
+        }
+
+        const year = parseInt(yearValue, 10);
+        if (Number.isNaN(year)) {
+            return false;
+        }
+
+        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    }
+
+    formatBirthdayForDisplay(birthdayValue) {
+        const normalized = this.normalizeBirthdayInput(birthdayValue);
+        if (!normalized) {
+            return '';
+        }
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const parts = normalized.split('-');
+        let month = '';
+        let day = '';
+
+        if (parts.length === 3) {
+            month = parts[1];
+            day = parts[2];
+        } else if (parts.length === 2) {
+            month = parts[0];
+            day = parts[1];
+        }
+
+        const monthIndex = parseInt(month, 10) - 1;
+        const monthName = months[monthIndex] || '';
+        return `${monthName} ${parseInt(day, 10)}`.trim();
     }
 
     handleFormSubmit(e) {
         e.preventDefault();
 
+        const birthdayValidation = this.validateBirthdayFields();
+        if (birthdayValidation) {
+            alert(birthdayValidation);
+            return;
+        }
+
         const contact = {
             name: this.nameInput.value.trim(),
             phone: this.phoneInput.value.trim(),
             email: this.emailInput.value.trim(),
-            birthday: this.birthdayInput.value,
+            birthday: this.getBirthdayValue(),
             notes: this.notesInput.value.trim()
         };
 
