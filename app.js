@@ -801,13 +801,20 @@ class UIManager {
 
     async handleAddContact() {
         if (navigator.contacts && typeof navigator.contacts.select === 'function') {
+            const remainingSlots = 10 - this.contactManager.getAllContacts().length;
+            if (remainingSlots <= 0) {
+                alert('Maximum of 10 contacts allowed. Delete an existing contact to add another.');
+                return;
+            }
+
             try {
                 const selectedContacts = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
 
                 if (selectedContacts && selectedContacts.length > 0) {
+                    const contactsToProcess = selectedContacts.slice(0, remainingSlots);
                     let addedCount = 0;
 
-                    for (const selectedContact of selectedContacts) {
+                    for (const selectedContact of contactsToProcess) {
                         if (this.contactManager.getAllContacts().length >= 10) {
                             break;
                         }
@@ -834,7 +841,7 @@ class UIManager {
 
                     if (addedCount > 0) {
                         this.render();
-                        if (addedCount < selectedContacts.length) {
+                        if (selectedContacts.length > contactsToProcess.length || addedCount < contactsToProcess.length) {
                             alert(`Added ${addedCount} contact(s). Reached maximum of 10 contacts.`);
                         }
                         return;
