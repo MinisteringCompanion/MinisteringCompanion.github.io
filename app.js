@@ -5,6 +5,24 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// Hide first-time share feature card when Web Share is not available
+(function hideShareFeatureIfUnsupported() {
+    const shareSupported = ('share' in navigator) || ('canShare' in navigator);
+    if (!shareSupported) {
+        try {
+            const card = document.getElementById('shareFeatureCard');
+            if (card && card.parentElement) {
+                card.parentElement.removeChild(card);
+                return;
+            }
+            const el = document.getElementById('shareFeatureText');
+            if (el && el.parentElement) el.parentElement.removeChild(el);
+        } catch (e) {
+            // ignore failures silently
+        }
+    }
+})();
+
 function bytesToBase64Url(bytes) {
     let binary = '';
     bytes.forEach(byte => {
@@ -896,6 +914,44 @@ class UIManager {
         });
     }
 
+    // Return true if birthdayValue occurs within `withinDays` days from today (0 = today)
+    isBirthdayWithin(birthdayValue, withinDays = 2) {
+        if (!birthdayValue) return false;
+        const normalized = this.normalizeBirthdayInput(birthdayValue);
+        if (!normalized) return false;
+
+        const parts = normalized.split('-');
+        let month, day;
+        if (parts.length === 3) {
+            month = parseInt(parts[1], 10);
+            day = parseInt(parts[2], 10);
+        } else if (parts.length === 2) {
+            month = parseInt(parts[0], 10);
+            day = parseInt(parts[1], 10);
+        } else {
+            return false;
+        }
+
+        const today = new Date();
+        const year = today.getFullYear();
+
+        // Handle Feb 29 on non-leap years by treating as Feb 28
+        if (month === 2 && day === 29 && !this.isLeapYear(String(year))) {
+            day = 28;
+        }
+
+        let next = new Date(year, month - 1, day);
+        // If this year's date has already passed, consider next year
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (next < startOfToday) {
+            next = new Date(year + 1, month - 1, day);
+        }
+
+        const diffMs = next - startOfToday;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 && diffDays <= withinDays;
+    }
+
     render() {
         const contacts = this.contactManager.getAllContacts();
 
@@ -938,6 +994,27 @@ class UIManager {
             const phoneLink = `<a href="${phoneHref}" class="${phoneClass}">${escapeHtml(contact.phone)}</a>`;
             const badge = isTextable ? `<span class="textable-indicator" title="Can receive SMS">💬 Textable</span>` : '';
             detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink} ${badge}</div>`;
+        }
+
+        // Show quick birthday action when birthday is within 0-2 days
+        const showBirthdayAction = this.isBirthdayWithin(contact.birthday, 2);
+        if (showBirthdayAction) {
+            const firstName = contact.name ? String(contact.name).trim().split(/\s+/)[0] : '';
+            const birthdayText = firstName
+                ? `Happy Birthday ${firstName}! Wishing you a wonderful day.`
+                : 'Happy Birthday! Wishing you a wonderful day.';
+            let actionHTML = '';
+            if (contact.phone && contact.textable === true) {
+                const smsHref = `sms:${contact.phone}?body=${encodeURIComponent(birthdayText)}`;
+                actionHTML = `<a class="btn birthday-btn" href="${smsHref}" title="Send birthday text">🎉</a>`;
+            } else if (contact.email) {
+                const mailtoHref = `mailto:${contact.email}?subject=${encodeURIComponent('Happy Birthday!')}&body=${encodeURIComponent(birthdayText)}`;
+                actionHTML = `<a class="btn birthday-btn" href="${mailtoHref}" title="Send birthday email">🎉</a>`;
+            }
+
+            if (actionHTML) {
+                detailsHTML += `<div class="contact-detail">${actionHTML}</div>`;
+            }
         }
         if (contact.birthday) {
             const formattedBday = this.formatBirthdayForDisplay(contact.birthday);
