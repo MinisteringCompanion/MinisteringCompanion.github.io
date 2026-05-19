@@ -973,6 +973,46 @@ class UIManager {
         return diffDays >= 0 && diffDays <= withinDays;
     }
 
+    getDaysSinceBirthday(birthdayValue) {
+        if (!birthdayValue) return null;
+        const normalized = this.normalizeBirthdayInput(birthdayValue);
+        if (!normalized) return null;
+
+        const parts = normalized.split('-');
+        let month, day;
+        if (parts.length === 3) {
+            month = parseInt(parts[1], 10);
+            day = parseInt(parts[2], 10);
+        } else if (parts.length === 2) {
+            month = parseInt(parts[0], 10);
+            day = parseInt(parts[1], 10);
+        } else {
+            return null;
+        }
+
+        const today = new Date();
+        const year = today.getFullYear();
+
+        // Handle Feb 29 on non-leap years by treating as Feb 28
+        if (month === 2 && day === 29 && !this.isLeapYear(String(year))) {
+            day = 28;
+        }
+
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        // Calculate most recent birthday (this year or last year)
+        let recentBirthday = new Date(year, month - 1, day);
+        // If this year's birthday hasn't occurred yet, use last year's
+        if (recentBirthday > startOfToday) {
+            recentBirthday = new Date(year - 1, month - 1, day);
+        }
+
+        // Calculate days elapsed since the birthday
+        const diffMs = startOfToday - recentBirthday;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
+
     render() {
         const contacts = this.contactManager.getAllContacts();
 
@@ -1323,12 +1363,19 @@ class UIManager {
         this.currentPreviewMethod = method; // 'sms' or 'email'
 
         const firstName = contact.name ? String(contact.name).trim().split(/\s+/)[0] : '';
+
+        // Determine if today is the birthday or if it's belated
+        const daysSince = this.getDaysSinceBirthday(contact.birthday);
+        const greeting = daysSince === 0
+            ? 'Happy birthday'
+            : 'Happy belated birthday';
+
         const birthdayText = firstName
-            ? `Happy Birthday ${firstName}! Wishing you a wonderful day.`
-            : 'Happy Birthday! Wishing you a wonderful day.';
+            ? `${greeting} ${firstName}! Wishing you a wonderful day.`
+            : `${greeting}! Wishing you a wonderful day.`;
 
         if (method === 'email') {
-            this.previewSubject.value = 'Happy Birthday!';
+            this.previewSubject.value = greeting + '!';
             this.previewSubject.classList.remove('hidden');
             this.previewSubjectLabel.classList.remove('hidden');
         } else {
