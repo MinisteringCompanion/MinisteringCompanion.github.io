@@ -5,21 +5,49 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Hide first-time share feature card when Web Share is not available
-(function hideShareFeatureIfUnsupported() {
+// Show a demo video inside the Share feature card when Web Share is available,
+// otherwise remove the share feature card entirely.
+(function handleShareFeatureAndVideo() {
     const shareSupported = ('share' in navigator) || ('canShare' in navigator);
-    if (!shareSupported) {
-        try {
-            const card = document.getElementById('shareFeatureCard');
+    const videoId = 'twrWuNYKTTI';
+    try {
+        const card = document.getElementById('shareFeatureCard');
+        const videoContainer = document.getElementById('shareVideoContainer');
+        const iframe = document.getElementById('shareVideoIframe');
+
+        if (!shareSupported) {
             if (card && card.parentElement) {
                 card.parentElement.removeChild(card);
                 return;
             }
             const el = document.getElementById('shareFeatureText');
             if (el && el.parentElement) el.parentElement.removeChild(el);
-        } catch (e) {
-            // ignore failures silently
+            return;
         }
+
+        // Sharing is supported: populate and show the video if present.
+        if (iframe && videoContainer) {
+            // Use the standard embed URL for YouTube
+            iframe.src = `https://www.youtube.com/embed/${videoId}`;
+            videoContainer.style.display = 'block';
+        } else if (card) {
+            // Fallback: create container and iframe dynamically
+            const div = document.createElement('div');
+            div.id = 'shareVideoContainer';
+            div.style.marginTop = '10px';
+            const f = document.createElement('iframe');
+            f.id = 'shareVideoIframe';
+            f.width = '320';
+            f.height = '180';
+            f.frameBorder = '0';
+            f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+            f.allowFullscreen = true;
+            f.src = `https://www.youtube.com/embed/${videoId}`;
+            div.appendChild(f);
+            card.appendChild(div);
+        }
+    } catch (e) {
+        // ignore failures silently
     }
 })();
 
