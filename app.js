@@ -264,7 +264,8 @@ class ContactManager {
                     phone: parts[1] || '',
                     email: parts[2] || '',
                     birthday: parts[3] || '',
-                    notes: ''
+                    notes: '',
+                    textable: false
                 };
                 const added = this.addContact(contact);
                 if (added) imported++;
@@ -288,7 +289,8 @@ class ContactManager {
                 phone: this.extractVCardField(vcard, 'TEL') || '',
                 email: this.extractVCardField(vcard, 'EMAIL') || '',
                 birthday: this.extractVCardField(vcard, 'BDAY') || '',
-                notes: ''
+                notes: '',
+                textable: false
             };
 
             if (contact.name) {
@@ -376,6 +378,7 @@ class UIManager {
         this.securityPinConfirmInput = document.getElementById('securityPinConfirm');
         this.securityConfirmGroup = document.getElementById('securityConfirmGroup');
         this.securityBiometricOptIn = document.getElementById('securityBiometricOptIn');
+        this.textableInput = document.getElementById('textable');
         this.securityHint = document.getElementById('securityHint');
         this.securityCancel = document.getElementById('securityCancel');
         this.securityBiometricBtn = document.getElementById('securityBiometricBtn');
@@ -398,6 +401,7 @@ class UIManager {
         this.securityCancel.addEventListener('click', () => this.closeSecurityDialog());
         this.securityBiometricBtn.addEventListener('click', () => this.handleBiometricAction());
         this.securityBiometricOptIn.addEventListener('change', () => this.handleBiometricToggleChange());
+        // nothing extra to attach for textable; it's handled in the form save
         this.modalOverlay.addEventListener('click', () => this.handleOverlayClick());
 
         // Check for shared data
@@ -729,6 +733,7 @@ class UIManager {
                 this.phoneInput.value = contact.phone || '';
                 this.emailInput.value = contact.email || '';
                 this.notesInput.value = contact.notes || '';
+                if (this.textableInput) this.textableInput.checked = contact.textable === true;
                 this.setBirthdayFields(contact.birthday || '');
             }
         } else {
@@ -760,7 +765,8 @@ class UIManager {
                             phone: phones[0] || '',
                             email: emails[0] || '',
                             birthday: birthdayValue,
-                            notes: ''
+                            notes: '',
+                            textable: false
                         };
 
                         const added = this.contactManager.addContact(contact);
@@ -926,7 +932,9 @@ class UIManager {
 
         let detailsHTML = '';
         if (contact.phone) {
-            const phoneLink = `<a href="tel:${contact.phone}" class="contact-link phone-link">${escapeHtml(contact.phone)}</a>`;
+            const isTextable = contact.textable === true;
+            const phoneHref = isTextable ? `sms:${contact.phone}` : `tel:${contact.phone}`;
+            const phoneLink = `<a href="${phoneHref}" class="contact-link phone-link">${escapeHtml(contact.phone)}</a>`;
             detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink}</div>`;
         }
         if (contact.birthday) {
@@ -994,6 +1002,7 @@ class UIManager {
         this.birthdayDayInput.value = '';
         this.birthdayYearInput.value = '';
         this.currentEditId = null;
+        if (this.textableInput) this.textableInput.checked = false;
     }
 
     setBirthdayFields(birthdayValue) {
@@ -1124,7 +1133,8 @@ class UIManager {
             phone: this.phoneInput.value.trim(),
             email: this.emailInput.value.trim(),
             birthday: this.getBirthdayValue(),
-            notes: this.notesInput.value.trim()
+            notes: this.notesInput.value.trim(),
+            textable: this.textableInput ? Boolean(this.textableInput.checked) : false
         };
 
         if (!contact.name) {
