@@ -926,14 +926,16 @@ class UIManager {
 
         let detailsHTML = '';
         if (contact.phone) {
-            detailsHTML += `<div class="contact-detail"><span>📱</span> ${contact.phone}</div>`;
+            const phoneLink = `<a href="tel:${contact.phone}" class="contact-link phone-link">${escapeHtml(contact.phone)}</a>`;
+            detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink}</div>`;
         }
         if (contact.birthday) {
             const formattedBday = this.formatBirthdayForDisplay(contact.birthday);
             detailsHTML += `<div class="contact-detail"><span>🎂</span> ${formattedBday}</div>`;
         }
-        if (contact.email && !isShareMode) {
-            detailsHTML += `<div class="contact-detail"><span>✉️</span> ${contact.email}</div>`;
+        if (contact.email) {
+            const emailLink = `<a href="mailto:${escapeHtml(contact.email)}" class="contact-link email-link">${escapeHtml(contact.email)}</a>`;
+            detailsHTML += `<div class="contact-detail"><span>✉️</span> ${emailLink}</div>`;
         }
 
         const infoHTML = `

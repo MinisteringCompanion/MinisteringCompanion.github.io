@@ -664,3 +664,24 @@ body.app-locked main {
         display: none;
     }
 }
+
+/* Contact Link Styles */
+.contact-link {
+    color: #0066cc;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.contact-link:hover {
+    color: #0052a3;
+    text-decoration: underline;
+}
+
+.phone-link {
+    font-weight: 500;
+}
+
+.email-link {
+    font-weight: 500;
+}
