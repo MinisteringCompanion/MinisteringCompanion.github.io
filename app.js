@@ -340,6 +340,7 @@ class UIManager {
         this.securityMode = 'unlock';
         this.biometricPromptCanceled = false;
         this.biometricPromptInProgress = false;
+        this.birthdayPromptPromiseResolver = null;
         this.initElements();
         this.attachEventListeners();
         this.render();
@@ -374,6 +375,15 @@ class UIManager {
         this.birthdayDayInput = document.getElementById('birthdayDay');
         this.birthdayYearInput = document.getElementById('birthdayYear');
         this.notesInput = document.getElementById('notes');
+        this.birthdayPromptDialog = document.getElementById('birthdayPromptDialog');
+        this.birthdayPromptTitle = document.getElementById('birthdayPromptTitle');
+        this.birthdayPromptMessage = document.getElementById('birthdayPromptMessage');
+        this.birthdayPromptMonthInput = document.getElementById('birthdayPromptMonth');
+        this.birthdayPromptDayInput = document.getElementById('birthdayPromptDay');
+        this.birthdayPromptYearInput = document.getElementById('birthdayPromptYear');
+        this.birthdayPromptHint = document.getElementById('birthdayPromptHint');
+        this.birthdayPromptSave = document.getElementById('birthdayPromptSave');
+        this.birthdayPromptCancel = document.getElementById('birthdayPromptCancel');
 
         // Share
         this.shareContactsList = document.getElementById('shareContactsList');
@@ -427,6 +437,8 @@ class UIManager {
         this.securityCancel.addEventListener('click', () => this.closeSecurityDialog());
         this.securityBiometricBtn.addEventListener('click', () => this.handleBiometricAction());
         this.securityBiometricOptIn.addEventListener('change', () => this.handleBiometricToggleChange());
+        if (this.birthdayPromptSave) this.birthdayPromptSave.addEventListener('click', () => this.handleBirthdayPromptSave());
+        if (this.birthdayPromptCancel) this.birthdayPromptCancel.addEventListener('click', () => this.closeBirthdayPrompt());
         // nothing extra to attach for textable; it's handled in the form save
         this.modalOverlay.addEventListener('click', () => this.handleOverlayClick());
 
@@ -494,6 +506,11 @@ class UIManager {
             if (this.securityMode === 'manage' && this.securityManager.isUnlocked()) {
                 this.closeSecurityDialog();
             }
+            return;
+        }
+
+        if (this.birthdayPromptDialog && !this.birthdayPromptDialog.classList.contains('hidden')) {
+            this.closeBirthdayPrompt();
             return;
         }
 
@@ -788,14 +805,18 @@ class UIManager {
                 const selectedContacts = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
 
                 if (selectedContacts && selectedContacts.length > 0) {
-                    const addedCount = selectedContacts.reduce((count, selectedContact) => {
+                    let addedCount = 0;
+
+                    for (const selectedContact of selectedContacts) {
+                        if (this.contactManager.getAllContacts().length >= 10) {
+                            break;
+                        }
+
                         const names = selectedContact.name || [];
                         const phones = selectedContact.tel || [];
                         const emails = selectedContact.email || [];
                         const pickerBirthday = this.extractBirthdayFromSelectedContact(selectedContact);
-                        const birthdayValue = pickerBirthday || this.normalizeBirthdayInput(
-                            prompt(`Birthday for ${names[0] || 'this contact'}? Enter a date like YYYY-MM-DD or MM/DD/YYYY, or leave blank.`)
-                        );
+                        const birthdayValue = pickerBirthday || await this.promptForBirthday(names[0] || 'this contact');
                         const contact = {
                             name: names[0] || 'Unnamed Contact',
                             phone: phones[0] || '',
@@ -806,8 +827,10 @@ class UIManager {
                         };
 
                         const added = this.contactManager.addContact(contact);
-                        return added ? count + 1 : count;
-                    }, 0);
+                        if (added) {
+                            addedCount += 1;
+                        }
+                    }
 
                     if (addedCount > 0) {
                         this.render();
@@ -1182,25 +1205,27 @@ class UIManager {
     }
 
     getBirthdayValue() {
-        const month = this.birthdayMonthInput.value;
-        const day = this.birthdayDayInput.value;
-        const year = this.birthdayYearInput.value.trim();
-
-        if (!month || !day) {
-            return '';
-        }
-
-        const monthValue = month.padStart(2, '0');
-        const dayValue = String(parseInt(day, 10)).padStart(2, '0');
-        return year ? `${year}-${monthValue}-${dayValue}` : `${monthValue}-${dayValue}`;
+        return this.getBirthdaySelectionValue(
+            this.birthdayMonthInput.value,
+            this.birthdayDayInput.value,
+            this.birthdayYearInput.value
+        );
     }
 
     validateBirthdayFields() {
-        const month = parseInt(this.birthdayMonthInput.value, 10);
-        const day = parseInt(this.birthdayDayInput.value, 10);
-        const yearValue = this.birthdayYearInput.value.trim();
+        return this.validateBirthdaySelection(
+            this.birthdayMonthInput.value,
+            this.birthdayDayInput.value,
+            this.birthdayYearInput.value
+        );
+    }
 
-        if (!month && !day && !yearValue) {
+    validateBirthdaySelection(monthValue, dayValue, yearValue) {
+        const month = parseInt(monthValue, 10);
+        const day = parseInt(dayValue, 10);
+        const trimmedYear = yearValue.trim();
+
+        if (!month && !day && !trimmedYear) {
             return '';
         }
 
@@ -1208,7 +1233,7 @@ class UIManager {
             return 'Please choose both a month and a day for the birthday.';
         }
 
-        const maxDayByMonth = [31, this.isLeapYear(yearValue) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const maxDayByMonth = [31, this.isLeapYear(trimmedYear) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
         const maxDay = maxDayByMonth[month - 1];
 
         if (!maxDay) {
@@ -1220,14 +1245,134 @@ class UIManager {
             return `${monthName} does not have ${day} days.`;
         }
 
-        if (yearValue) {
-            const year = parseInt(yearValue, 10);
-            if (Number.isNaN(year) || yearValue.length !== 4) {
+        if (trimmedYear) {
+            const year = parseInt(trimmedYear, 10);
+            if (Number.isNaN(year) || trimmedYear.length !== 4) {
                 return 'Please enter a four-digit year, or leave the year blank.';
             }
         }
 
         return '';
+    }
+
+    getBirthdaySelectionValue(monthValue, dayValue, yearValue) {
+        const month = monthValue;
+        const day = dayValue;
+        const year = yearValue.trim();
+
+        if (!month || !day) {
+            return '';
+        }
+
+        const monthValuePadded = month.padStart(2, '0');
+        const dayValuePadded = String(parseInt(day, 10)).padStart(2, '0');
+        return year ? `${year}-${monthValuePadded}-${dayValuePadded}` : `${monthValuePadded}-${dayValuePadded}`;
+    }
+
+    setBirthdayPromptFields(birthdayValue) {
+        if (this.birthdayPromptMonthInput) this.birthdayPromptMonthInput.value = '';
+        if (this.birthdayPromptDayInput) this.birthdayPromptDayInput.value = '';
+        if (this.birthdayPromptYearInput) this.birthdayPromptYearInput.value = '';
+
+        if (!birthdayValue) {
+            return;
+        }
+
+        const normalized = this.normalizeBirthdayInput(birthdayValue);
+        if (!normalized) {
+            return;
+        }
+
+        const parts = normalized.split('-');
+        if (parts.length === 3) {
+            if (this.birthdayPromptYearInput) this.birthdayPromptYearInput.value = parts[0];
+            if (this.birthdayPromptMonthInput) this.birthdayPromptMonthInput.value = parts[1];
+            if (this.birthdayPromptDayInput) this.birthdayPromptDayInput.value = String(parseInt(parts[2], 10));
+            return;
+        }
+
+        if (parts.length === 2) {
+            if (this.birthdayPromptMonthInput) this.birthdayPromptMonthInput.value = parts[0];
+            if (this.birthdayPromptDayInput) this.birthdayPromptDayInput.value = String(parseInt(parts[1], 10));
+        }
+    }
+
+    promptForBirthday(contactName, existingBirthday = '') {
+        if (!this.birthdayPromptDialog || !this.birthdayPromptMonthInput || !this.birthdayPromptDayInput || !this.birthdayPromptYearInput) {
+            return Promise.resolve(existingBirthday || '');
+        }
+
+        if (this.birthdayPromptPromiseResolver) {
+            this.birthdayPromptPromiseResolver(existingBirthday || '');
+            this.birthdayPromptPromiseResolver = null;
+        }
+
+        if (this.birthdayPromptTitle) {
+            this.birthdayPromptTitle.textContent = `Birthday for ${contactName}`;
+        }
+        if (this.birthdayPromptMessage) {
+            this.birthdayPromptMessage.textContent = 'Use the birthday picker below, or leave it blank if you do not know the birthday yet.';
+        }
+        if (this.birthdayPromptHint) {
+            this.birthdayPromptHint.textContent = '';
+            this.birthdayPromptHint.classList.remove('error');
+        }
+
+        this.setBirthdayPromptFields(existingBirthday);
+        this.birthdayPromptDialog.classList.remove('hidden');
+        this.modalOverlay.classList.remove('hidden');
+        this.birthdayPromptMonthInput.focus();
+
+        return new Promise(resolve => {
+            this.birthdayPromptPromiseResolver = resolve;
+        });
+    }
+
+    handleBirthdayPromptSave() {
+        if (!this.birthdayPromptPromiseResolver) {
+            this.closeBirthdayPrompt();
+            return;
+        }
+
+        const validation = this.validateBirthdaySelection(
+            this.birthdayPromptMonthInput.value,
+            this.birthdayPromptDayInput.value,
+            this.birthdayPromptYearInput.value
+        );
+
+        if (validation) {
+            if (this.birthdayPromptHint) {
+                this.birthdayPromptHint.textContent = validation;
+                this.birthdayPromptHint.classList.add('error');
+            }
+            return;
+        }
+
+        const birthdayValue = this.getBirthdaySelectionValue(
+            this.birthdayPromptMonthInput.value,
+            this.birthdayPromptDayInput.value,
+            this.birthdayPromptYearInput.value
+        );
+
+        this.closeBirthdayPrompt(birthdayValue);
+    }
+
+    closeBirthdayPrompt(birthdayValue = '') {
+        if (this.birthdayPromptDialog) {
+            this.birthdayPromptDialog.classList.add('hidden');
+        }
+        this.modalOverlay.classList.add('hidden');
+
+        if (this.birthdayPromptHint) {
+            this.birthdayPromptHint.textContent = '';
+            this.birthdayPromptHint.classList.remove('error');
+        }
+
+        if (this.birthdayPromptPromiseResolver) {
+            const resolve = this.birthdayPromptPromiseResolver;
+            this.birthdayPromptPromiseResolver = null;
+            resolve(birthdayValue || '');
+        }
     }
 
     isLeapYear(yearValue) {
