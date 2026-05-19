@@ -934,8 +934,10 @@ class UIManager {
         if (contact.phone) {
             const isTextable = contact.textable === true;
             const phoneHref = isTextable ? `sms:${contact.phone}` : `tel:${contact.phone}`;
-            const phoneLink = `<a href="${phoneHref}" class="contact-link phone-link">${escapeHtml(contact.phone)}</a>`;
-            detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink}</div>`;
+            const phoneClass = isTextable ? 'contact-link phone-link textable' : 'contact-link phone-link';
+            const phoneLink = `<a href="${phoneHref}" class="${phoneClass}">${escapeHtml(contact.phone)}</a>`;
+            const badge = isTextable ? `<span class="textable-indicator" title="Can receive SMS">💬 Textable</span>` : '';
+            detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink} ${badge}</div>`;
         }
         if (contact.birthday) {
             const formattedBday = this.formatBirthdayForDisplay(contact.birthday);

@@ -79,6 +79,38 @@ header h1 {
     margin: 0;
 }
 
+/* Textable indicator badge on contact card */
+.textable-indicator {
+    display: inline-block;
+    background: #e6f4ea;
+    color: #1b6e3a;
+    border: 1px solid #c7ecd3;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.contact-detail .textable-indicator {
+    margin-left: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+/* Improve checkbox appearance */
+.textable-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+/* Slightly highlight phone link when textable */
+.contact-detail .phone-link.textable {
+    color: #0b6cff;
+    font-weight: 600;
+}
+
 .header-meta {
     display: flex;
     align-items: center;
