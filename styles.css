@@ -132,6 +132,32 @@ header h1 {
     transform: translateY(-1px);
 }
 
+/* Message preview modal textarea */
+#previewBody {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+#previewSubject {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
 .header-meta {
     display: flex;
     align-items: center;

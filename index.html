@@ -118,6 +118,25 @@
         </div>
     </div>
 
+    <!-- Message Preview Dialog -->
+    <div id="messagePreviewDialog" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="previewTitle">Preview Message</h3>
+            <div class="form-group">
+                <label for="previewSubject" id="previewSubjectLabel" class="hidden">Subject</label>
+                <input type="text" id="previewSubject" class="hidden" placeholder="Email subject">
+            </div>
+            <div class="form-group">
+                <label for="previewBody">Message</label>
+                <textarea id="previewBody" rows="6"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button id="previewCancel" class="btn btn-secondary">Cancel</button>
+                <button id="previewSend" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Security Dialog -->
     <div id="securityDialog" class="modal hidden">
         <div class="modal-content security-modal-content">

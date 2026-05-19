@@ -401,6 +401,14 @@ class UIManager {
         this.securityCancel = document.getElementById('securityCancel');
         this.securityBiometricBtn = document.getElementById('securityBiometricBtn');
         this.securitySubmit = document.getElementById('securitySubmit');
+        // Message preview elements
+        this.messagePreviewDialog = document.getElementById('messagePreviewDialog');
+        this.previewTitle = document.getElementById('previewTitle');
+        this.previewSubject = document.getElementById('previewSubject');
+        this.previewSubjectLabel = document.getElementById('previewSubjectLabel');
+        this.previewBody = document.getElementById('previewBody');
+        this.previewCancel = document.getElementById('previewCancel');
+        this.previewSend = document.getElementById('previewSend');
     }
 
     attachEventListeners() {
@@ -421,6 +429,10 @@ class UIManager {
         this.securityBiometricOptIn.addEventListener('change', () => this.handleBiometricToggleChange());
         // nothing extra to attach for textable; it's handled in the form save
         this.modalOverlay.addEventListener('click', () => this.handleOverlayClick());
+
+        // Preview dialog actions
+        if (this.previewCancel) this.previewCancel.addEventListener('click', () => this.closeMessagePreview());
+        if (this.previewSend) this.previewSend.addEventListener('click', () => this.sendPreviewMessage());
 
         // Check for shared data
         this.checkForSharedData();
@@ -482,6 +494,12 @@ class UIManager {
             if (this.securityMode === 'manage' && this.securityManager.isUnlocked()) {
                 this.closeSecurityDialog();
             }
+            return;
+        }
+
+        // Close message preview if open
+        if (this.messagePreviewDialog && !this.messagePreviewDialog.classList.contains('hidden')) {
+            this.closeMessagePreview();
             return;
         }
 
@@ -940,14 +958,17 @@ class UIManager {
             day = 28;
         }
 
-        let next = new Date(year, month - 1, day);
-        // If this year's date has already passed, consider next year
         const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        if (next < startOfToday) {
-            next = new Date(year + 1, month - 1, day);
+
+        // Calculate most recent birthday (this year or last year)
+        let recentBirthday = new Date(year, month - 1, day);
+        // If this year's birthday hasn't occurred yet, use last year's
+        if (recentBirthday > startOfToday) {
+            recentBirthday = new Date(year - 1, month - 1, day);
         }
 
-        const diffMs = next - startOfToday;
+        // Calculate days elapsed since the birthday
+        const diffMs = startOfToday - recentBirthday;
         const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
         return diffDays >= 0 && diffDays <= withinDays;
     }
@@ -996,7 +1017,7 @@ class UIManager {
             detailsHTML += `<div class="contact-detail"><span>📱</span> ${phoneLink} ${badge}</div>`;
         }
 
-        // Show quick birthday action when birthday is within 0-2 days
+        // Show quick birthday action when birthday was today or up to 2 days ago (so you can send a late birthday wish)
         const showBirthdayAction = this.isBirthdayWithin(contact.birthday, 2);
         if (showBirthdayAction) {
             const firstName = contact.name ? String(contact.name).trim().split(/\s+/)[0] : '';
@@ -1005,11 +1026,9 @@ class UIManager {
                 : 'Happy Birthday! Wishing you a wonderful day.';
             let actionHTML = '';
             if (contact.phone && contact.textable === true) {
-                const smsHref = `sms:${contact.phone}?body=${encodeURIComponent(birthdayText)}`;
-                actionHTML = `<a class="btn birthday-btn" href="${smsHref}" title="Send birthday text">🎉</a>`;
+                actionHTML = `<a class="btn birthday-btn" href="#" data-method="sms" data-id="${contact.id}" title="Send birthday text">🎉</a>`;
             } else if (contact.email) {
-                const mailtoHref = `mailto:${contact.email}?subject=${encodeURIComponent('Happy Birthday!')}&body=${encodeURIComponent(birthdayText)}`;
-                actionHTML = `<a class="btn birthday-btn" href="${mailtoHref}" title="Send birthday email">🎉</a>`;
+                actionHTML = `<a class="btn birthday-btn" href="#" data-method="email" data-id="${contact.id}" title="Send birthday email">🎉</a>`;
             }
 
             if (actionHTML) {
@@ -1046,6 +1065,16 @@ class UIManager {
 
             card.querySelector('.edit-btn').addEventListener('click', () => this.showFormView(contact.id));
             card.querySelector('.delete-btn').addEventListener('click', () => this.showDeleteConfirm(contact.id, contact.name));
+            const bbtn = card.querySelector('.birthday-btn');
+            if (bbtn) {
+                bbtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const method = bbtn.dataset.method;
+                    const cid = bbtn.dataset.id;
+                    const c = this.contactManager.getContact(cid);
+                    if (c) this.openMessagePreview(c, method);
+                });
+            }
         } else {
             const sharedText = this.sharedData?.text || this.sharedData?.url || '';
             const shareActions = document.createElement('div');
@@ -1287,6 +1316,53 @@ class UIManager {
     closeModal() {
         this.confirmDialog.classList.add('hidden');
         this.modalOverlay.classList.add('hidden');
+    }
+
+    openMessagePreview(contact, method) {
+        this.currentPreviewContact = contact;
+        this.currentPreviewMethod = method; // 'sms' or 'email'
+
+        const firstName = contact.name ? String(contact.name).trim().split(/\s+/)[0] : '';
+        const birthdayText = firstName
+            ? `Happy Birthday ${firstName}! Wishing you a wonderful day.`
+            : 'Happy Birthday! Wishing you a wonderful day.';
+
+        if (method === 'email') {
+            this.previewSubject.value = 'Happy Birthday!';
+            this.previewSubject.classList.remove('hidden');
+            this.previewSubjectLabel.classList.remove('hidden');
+        } else {
+            this.previewSubject.value = '';
+            this.previewSubject.classList.add('hidden');
+            this.previewSubjectLabel.classList.add('hidden');
+        }
+
+        this.previewBody.value = birthdayText;
+        this.previewBody.focus();
+        this.messagePreviewDialog.classList.remove('hidden');
+        this.modalOverlay.classList.remove('hidden');
+    }
+
+    closeMessagePreview() {
+        this.messagePreviewDialog.classList.add('hidden');
+        this.modalOverlay.classList.add('hidden');
+        this.currentPreviewContact = null;
+        this.currentPreviewMethod = null;
+    }
+
+    sendPreviewMessage() {
+        if (!this.currentPreviewContact || !this.currentPreviewMethod) return;
+        const body = this.previewBody.value || '';
+        if (this.currentPreviewMethod === 'sms') {
+            const href = `sms:${this.currentPreviewContact.phone}?body=${encodeURIComponent(body)}`;
+            window.location.href = href;
+        } else if (this.currentPreviewMethod === 'email') {
+            const subject = this.previewSubject.value || 'Happy Birthday!';
+            const href = `mailto:${this.currentPreviewContact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = href;
+        }
+
+        this.closeMessagePreview();
     }
 
     checkForSharedData() {
