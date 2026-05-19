@@ -1318,7 +1318,7 @@ class UIManager {
             this.birthdayPromptTitle.textContent = `Birthday for ${contactName}`;
         }
         if (this.birthdayPromptMessage) {
-            this.birthdayPromptMessage.textContent = 'Use the birthday picker below, or leave it blank if you do not know the birthday yet.';
+            this.birthdayPromptMessage.textContent = 'Use the birthday picker below, or click Skip if you do not know the birthday yet.';
         }
         if (this.birthdayPromptHint) {
             this.birthdayPromptHint.textContent = '';
@@ -1338,6 +1338,14 @@ class UIManager {
     handleBirthdayPromptSave() {
         if (!this.birthdayPromptPromiseResolver) {
             this.closeBirthdayPrompt();
+            return;
+        }
+
+        if (!this.birthdayPromptMonthInput.value && !this.birthdayPromptDayInput.value && !this.birthdayPromptYearInput.value.trim()) {
+            if (this.birthdayPromptHint) {
+                this.birthdayPromptHint.textContent = 'Please choose a birthday or click Skip.';
+                this.birthdayPromptHint.classList.add('error');
+            }
             return;
         }
 
