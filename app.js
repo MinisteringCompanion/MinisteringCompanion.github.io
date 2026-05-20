@@ -83,6 +83,52 @@ if ('serviceWorker' in navigator) {
     }
 })();
 
+// iOS Add to Home Screen hint handling
+(function setupIosHint() {
+    const IOS_DISMISSED_KEY = 'ios_add_to_home_dismissed';
+    function isIos() {
+        const ua = navigator.userAgent || '';
+        const platform = navigator.platform || '';
+        return /iphone|ipad|ipod/i.test(ua) || /iphone|ipad|ipod/i.test(platform) || (ua.includes('Mac') && 'ontouchend' in document);
+    }
+
+    function isInStandaloneMode() {
+        return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    }
+
+    function showIosHint() {
+        const el = document.getElementById('iosHint');
+        if (!el) return;
+        el.classList.remove('hidden');
+    }
+
+    function hideIosHint() {
+        const el = document.getElementById('iosHint');
+        if (!el) return;
+        el.classList.add('hidden');
+    }
+
+    if (!isIos() || isInStandaloneMode()) return;
+    if (localStorage.getItem(IOS_DISMISSED_KEY) === 'true') return;
+
+    // Show after slight delay unless the PWA install banner is visible
+    setTimeout(() => {
+        const installBanner = document.getElementById('installPrompt');
+        if (installBanner && !installBanner.classList.contains('hidden')) return;
+        showIosHint();
+    }, 2400);
+
+    document.addEventListener('click', (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (t.id === 'iosDismissBtn') {
+            e.preventDefault();
+            hideIosHint();
+            localStorage.setItem(IOS_DISMISSED_KEY, 'true');
+        }
+    });
+})();
+
 // Show a demo video inside the Share feature card when Web Share is available,
 // otherwise remove the share feature card entirely.
 (function handleShareFeatureAndVideo() {
