@@ -260,6 +260,19 @@
     <!-- Modal Overlay -->
     <div id="modalOverlay" class="modal-overlay hidden"></div>
 
+    <!-- PWA Install Prompt -->
+    <div id="installPrompt" class="install-prompt hidden" role="dialog" aria-live="polite" aria-label="Install app">
+        <div class="install-content">
+            <div class="install-text">
+                <strong>Install</strong>
+                <div class="install-sub">Install this website as an app.</div>
+            </div>
+            <div class="install-actions">
+                <button id="installBtn" class="btn btn-primary">Install</button>
+                <button id="installDismissBtn" class="btn btn-secondary">Maybe later</button>
+            </div>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 

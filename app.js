@@ -5,6 +5,84 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// PWA install prompt handling
+(function setupInstallPrompt() {
+    const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed';
+    const INSTALL_INSTALLED_KEY = 'pwa_installed';
+    let deferredPrompt = null;
+
+    function showInstallBanner() {
+        const banner = document.getElementById('installPrompt');
+        if (!banner) return;
+        banner.classList.remove('hidden');
+    }
+
+    function hideInstallBanner() {
+        const banner = document.getElementById('installPrompt');
+        if (!banner) return;
+        banner.classList.add('hidden');
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Do not show if already installed or previously dismissed
+        if (localStorage.getItem(INSTALL_INSTALLED_KEY) === 'true') return;
+        if (localStorage.getItem(INSTALL_DISMISSED_KEY) === 'true') return;
+
+        // Show gentle banner after short delay so it doesn't interrupt first-time modal
+        setTimeout(() => {
+            showInstallBanner();
+        }, 2500);
+    });
+
+    // Install button
+    document.addEventListener('click', async (ev) => {
+        const target = ev.target;
+        if (!target) return;
+
+        if (target.id === 'installBtn') {
+            ev.preventDefault();
+            if (!deferredPrompt) return;
+            hideInstallBanner();
+            try {
+                deferredPrompt.prompt();
+                const choice = await deferredPrompt.userChoice;
+                if (choice && choice.outcome === 'accepted') {
+                    localStorage.setItem(INSTALL_INSTALLED_KEY, 'true');
+                } else {
+                    localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+                }
+            } catch (err) {
+                console.error('Install prompt failed:', err);
+                localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+            } finally {
+                deferredPrompt = null;
+            }
+        }
+
+        if (target.id === 'installDismissBtn') {
+            ev.preventDefault();
+            hideInstallBanner();
+            localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        localStorage.setItem(INSTALL_INSTALLED_KEY, 'true');
+        deferredPrompt = null;
+        hideInstallBanner();
+    });
+
+    // If page already running in standalone, hide the banner
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) {
+        localStorage.setItem(INSTALL_INSTALLED_KEY, 'true');
+    }
+})();
+
 // Show a demo video inside the Share feature card when Web Share is available,
 // otherwise remove the share feature card entirely.
 (function handleShareFeatureAndVideo() {

@@ -794,3 +794,53 @@ body.app-locked main {
 .email-link {
     font-weight: 500;
 }
+
+/* Install prompt banner */
+.install-prompt {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 18px;
+    background: linear-gradient(180deg, #ffffff, #fbfbfb);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 12px 14px;
+    z-index: 1200;
+    max-width: 92%;
+    width: 520px;
+}
+
+.install-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.install-text strong {
+    display: block;
+    font-size: 15px;
+    color: #222;
+}
+
+.install-sub {
+    font-size: 13px;
+    color: #555;
+}
+
+.install-actions {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 520px) {
+    .install-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .install-actions {
+        justify-content: stretch;
+    }
+}
