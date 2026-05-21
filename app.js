@@ -23,6 +23,15 @@ if ('serviceWorker' in navigator) {
         banner.classList.add('hidden');
     }
 
+    function appIsUnlocked() {
+        try {
+            if (typeof securityManager !== 'undefined' && securityManager && typeof securityManager.isUnlocked === 'function') {
+                return securityManager.isUnlocked();
+            }
+        } catch (e) { }
+        return sessionStorage.getItem('ministering_app_unlocked') === 'true';
+    }
+
     window.addEventListener('beforeinstallprompt', (e) => {
         // Prevent the mini-infobar from appearing on mobile
         e.preventDefault();
@@ -32,10 +41,18 @@ if ('serviceWorker' in navigator) {
         if (localStorage.getItem(INSTALL_INSTALLED_KEY) === 'true') return;
         if (localStorage.getItem(INSTALL_DISMISSED_KEY) === 'true') return;
 
-        // Show gentle banner after short delay so it doesn't interrupt first-time modal
-        setTimeout(() => {
-            showInstallBanner();
-        }, 2500);
+        // If app is unlocked, show the banner after a short delay.
+        if (appIsUnlocked()) {
+            setTimeout(() => showInstallBanner(), 2500);
+            return;
+        }
+
+        // Otherwise wait until the user unlocks the app, then show the banner once.
+        const onUnlocked = () => {
+            try { window.removeEventListener('appunlocked', onUnlocked); } catch (e) { }
+            setTimeout(() => showInstallBanner(), 500);
+        };
+        window.addEventListener('appunlocked', onUnlocked);
     });
 
     // Install button
@@ -111,12 +128,30 @@ if ('serviceWorker' in navigator) {
     if (!isIos() || isInStandaloneMode()) return;
     if (localStorage.getItem(IOS_DISMISSED_KEY) === 'true') return;
 
-    // Show after slight delay unless the PWA install banner is visible
-    setTimeout(() => {
+    function appIsUnlocked() {
+        try {
+            if (typeof securityManager !== 'undefined' && securityManager && typeof securityManager.isUnlocked === 'function') {
+                return securityManager.isUnlocked();
+            }
+        } catch (e) { }
+        return sessionStorage.getItem('ministering_app_unlocked') === 'true';
+    }
+
+    const tryShowIosHint = () => {
         const installBanner = document.getElementById('installPrompt');
         if (installBanner && !installBanner.classList.contains('hidden')) return;
         showIosHint();
-    }, 2400);
+    };
+
+    if (appIsUnlocked()) {
+        setTimeout(tryShowIosHint, 2400);
+    } else {
+        const onUnlocked = () => {
+            try { window.removeEventListener('appunlocked', onUnlocked); } catch (e) { }
+            setTimeout(tryShowIosHint, 500);
+        };
+        window.addEventListener('appunlocked', onUnlocked);
+    }
 
     document.addEventListener('click', (e) => {
         const t = e.target;
@@ -821,6 +856,12 @@ class UIManager {
         document.body.classList.remove('app-locked');
         this.closeSecurityDialog();
         this.render();
+        // Notify other modules that the app has been unlocked
+        try {
+            window.dispatchEvent(new Event('appunlocked'));
+        } catch (e) {
+            // ignore in non-window contexts
+        }
     }
 
     async handleSecuritySubmit(e) {
