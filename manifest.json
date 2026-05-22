@@ -1,7 +1,7 @@
 {
-    "name": "Ministerly",
-    "short_name": "Ministerly",
-    "description": "Manage ministering contacts and share things with them.",
+    "name": "Ministering Companion",
+    "short_name": "Ministering",
+    "description": "Manage ministering contacts and share content with them.",
     "id": ".",
     "start_url": ".",
     "scope": ".",
